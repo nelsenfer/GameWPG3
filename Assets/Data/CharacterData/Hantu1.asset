@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad59f5302a0605943ae00ffc6c0a0fdb, type: 3}
   m_Name: Hantu1
   m_EditorClassIdentifier: 
-  characterID: Hantu1
-  displayName: Hantu1
+  characterID: Hantu
+  displayName: Hantu
   portrait: {fileID: 0}
   isPlayerSide: 0
