@@ -7,7 +7,6 @@ namespace Game.Dialogue.UI
 {
     public class ChatBubbleUI : MonoBehaviour
     {
-        [SerializeField] private HorizontalLayoutGroup rowLayoutGroup;
         [SerializeField] private Image portraitImage;
         [SerializeField] private TMP_Text nameText;
         [SerializeField] private TMP_Text dialogueText;
@@ -40,12 +39,6 @@ namespace Game.Dialogue.UI
 
         private void ApplySide(bool isPlayerSide)
         {
-            if (rowLayoutGroup != null)
-            {
-                rowLayoutGroup.reverseArrangement = isPlayerSide;
-                rowLayoutGroup.childAlignment = isPlayerSide ? TextAnchor.UpperRight : TextAnchor.UpperLeft;
-            }
-
             if (nameText != null) nameText.alignment = isPlayerSide ? TextAlignmentOptions.Right : TextAlignmentOptions.Left;
             if (dialogueText != null) dialogueText.alignment = isPlayerSide ? TextAlignmentOptions.Right : TextAlignmentOptions.Left;
             if (bubbleBackground != null) bubbleBackground.color = isPlayerSide ? playerBubbleColor : npcBubbleColor;
