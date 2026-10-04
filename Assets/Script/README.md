@@ -10,6 +10,8 @@ Script/
 |   |-- Interaction/
 |   |-- Player/
 |   `-- UI/
+|-- Minigames/
+|   `-- Typing/
 `-- Fulfillment/
     `-- Examples/
 ```
@@ -23,3 +25,11 @@ Script/
 5. Tambahkan collider trigger dan `CandleInteractable` ke objek lilin. Pastikan layer objek termasuk di `interactableLayer`.
 
 Project ini memakai Unity 6, sehingga `PlayerController` menggunakan `Rigidbody2D.linearVelocity`.
+
+## Minigame mengetik
+
+Script minigame mengetik berada di `Minigames/Typing/`:
+
+- `TypingTaskData`: asset task yang dibuat melalui `Create > Game > Typing > Typing Task Data`.
+- `TypingMinigameController`: mengatur panel UI, input ketikan, timer, dan hasil.
+- `TypingTaskInteractable`: menghubungkan objek yang bisa diinteraksi dengan controller dan event penyelesaian.
