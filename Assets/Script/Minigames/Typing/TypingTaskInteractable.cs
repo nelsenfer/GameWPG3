@@ -23,9 +23,13 @@ namespace Game.Typing
         [Tooltip("Diraise saat task berhasil diselesaikan.")]
         [SerializeField] private VoidEventChannelSO onTaskCompleted;
 
+        [Header("Pengulangan")]
+        [Tooltip("Nyala: setelah lulus, objek tidak bisa dipakai lagi. Matikan untuk testing / task yang boleh diulang.")]
+        [SerializeField] private bool oneTimeOnly = true;
+
         private bool completed;
 
-        public bool CanInteract() => !completed && (controller == null || !controller.IsOpen);
+        public bool CanInteract() => !(oneTimeOnly && completed) && (controller == null || !controller.IsOpen);
         public string GetInteractionPrompt() => interactionPrompt;
 
         public void OnInteract(GameObject interactor)

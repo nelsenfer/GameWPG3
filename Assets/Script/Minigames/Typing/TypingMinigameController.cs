@@ -16,7 +16,7 @@ namespace Game.Typing
     ///   menghapus huruf terakhir (hitungannya ikut dibatalkan), tapi hanya di
     ///   dalam baris yang sedang tampil.
     /// - Timer mulai saat huruf pertama diketik, dan SELALU jalan sampai habis.
-    /// - Lulus kalau huruf yang diketik >= minTypedChars DAN akurasi >= minAccuracyPercent.
+    /// - Lulus kalau huruf yang BENAR >= minTypedChars DAN akurasi >= minAccuracyPercent.
     /// - Kalau lulus, onPassed dipanggil saat tombol Tutup ditekan.
     /// - Escape menutup minigame saat belum mulai atau saat layar hasil.
     ///
@@ -37,6 +37,22 @@ namespace Game.Typing
         [SerializeField] private TMP_Text timerText;
         [Tooltip("Opsional: petunjuk 'mulai ketik untuk memulai', otomatis hilang saat timer jalan.")]
         [SerializeField] private GameObject startHint;
+        [Tooltip("Teks yang ditampilkan di startHint (otomatis diisi ke TMP_Text di dalamnya).")]
+        [SerializeField, TextArea] private string startHintMessage = "Mulai mengetik untuk memulai timer";
+
+        [Header("Progress Bar (opsional)")]
+        [Tooltip("Slider (Min 0, Max 1, Interactable mati). Terisi sesuai huruf yang diketik / minTypedChars.")]
+        [SerializeField] private Slider progressSlider;
+        [Tooltip("Opsional: Image fill dari slider, supaya warnanya berubah saat target tercapai.")]
+        [SerializeField] private Image progressFill;
+        [Tooltip("Opsional: teks seperti '87 / 150  •  Akurasi 92%'.")]
+        [SerializeField] private TMP_Text progressText;
+        [Tooltip("Normal: akurasi aman, target belum tercapai.")]
+        [SerializeField] private Color progressColor = new Color(0.4f, 0.6f, 0.9f);
+        [Tooltip("Akurasi live di bawah minimum.")]
+        [SerializeField] private Color progressLowAccuracyColor = new Color(0.9f, 0.45f, 0.3f);
+        [Tooltip("Target huruf tercapai DAN akurasi aman (artinya lulus).")]
+        [SerializeField] private Color progressCompleteColor = new Color(0.3f, 0.8f, 0.4f);
 
         [Header("Layar Hasil")]
         [SerializeField] private GameObject resultPanel;
@@ -182,6 +198,8 @@ namespace Game.Typing
             {
                 RefreshDisplay();
             }
+
+            UpdateProgress();
         }
 
         private void HandleBackspace()
@@ -192,6 +210,7 @@ namespace Game.Typing
             if (results[cursor]) correctCount--; else wrongCount--;
             results[cursor] = false;
             RefreshDisplay();
+            UpdateProgress();
         }
 
         private void Finish()
@@ -203,13 +222,14 @@ namespace Game.Typing
             float minutes = task.durationSeconds / 60f;
             float wpm = (correctCount / 5f) / minutes; // standar: 5 huruf = 1 kata
 
-            passed = typed >= task.minTypedChars && accuracy >= task.minAccuracyPercent;
+            // Target huruf dihitung dari huruf yang BENAR saja, supaya tidak bisa asal spam.
+            passed = correctCount >= task.minTypedChars && accuracy >= task.minAccuracyPercent;
 
             if (resultPanel != null) resultPanel.SetActive(true);
             if (resultStatusText != null) resultStatusText.text = passed ? "LULUS" : "BELUM CUKUP";
             if (resultWpmText != null) resultWpmText.text = $"{wpm:0} WPM";
             if (resultAccuracyText != null) resultAccuracyText.text = $"Akurasi {accuracy:0}% (min {task.minAccuracyPercent:0}%)";
-            if (resultCharsText != null) resultCharsText.text = $"Huruf {typed} (min {task.minTypedChars})  |  Benar {correctCount}  Salah {wrongCount}";
+            if (resultCharsText != null) resultCharsText.text = $"Huruf benar {correctCount} (min {task.minTypedChars})  |  Salah {wrongCount}";
             if (resultMessageText != null) resultMessageText.text = passed ? task.passMessage : task.failMessage;
 
             if (retryButton != null) retryButton.gameObject.SetActive(!passed);
@@ -225,10 +245,43 @@ namespace Game.Typing
             remaining = task.durationSeconds;
 
             if (resultPanel != null) resultPanel.SetActive(false);
-            if (startHint != null) startHint.SetActive(true);
+            if (startHint != null)
+            {
+                var hintLabel = startHint.GetComponentInChildren<TMP_Text>(true);
+                if (hintLabel != null) hintLabel.text = startHintMessage;
+                startHint.SetActive(true);
+            }
 
             LoadText();
             UpdateTimerText();
+            UpdateProgress();
+        }
+
+        /// <summary>
+        /// Isi bar = huruf BENAR / target minimum. Warna & teks menggabungkan akurasi live,
+        /// jadi pemain melihat kedua syarat lulus (jumlah huruf + akurasi) di satu tempat.
+        /// </summary>
+        private void UpdateProgress()
+        {
+            if (task == null) return;
+
+            int typed = correctCount + wrongCount;
+            int goal = Mathf.Max(1, task.minTypedChars);
+            float t = Mathf.Clamp01((float)correctCount / goal);
+
+            // Sebelum mengetik apa pun, akurasi dianggap aman (100%).
+            float accuracy = typed > 0 ? correctCount * 100f / typed : 100f;
+            bool accuracyOk = accuracy >= task.minAccuracyPercent;
+            bool goalReached = correctCount >= goal;
+
+            Color fillColor = !accuracyOk ? progressLowAccuracyColor
+                            : goalReached ? progressCompleteColor
+                            : progressColor;
+
+            if (progressSlider != null) progressSlider.value = t;
+            if (progressFill != null) progressFill.color = fillColor;
+            if (progressText != null)
+                progressText.text = $"{Mathf.Min(correctCount, goal)} / {goal}  •  Akurasi {accuracy:0}%";
         }
 
         /// <summary>Menyusun urutan baris (diacak kalau randomizeOrder menyala).</summary>

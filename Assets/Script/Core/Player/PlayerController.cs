@@ -6,6 +6,7 @@ namespace Game.Core
 
     /// <summary>
     /// Kontrol gerak horizontal pemain dengan dukungan state Frozen.
+    /// Animasi & flip sprite diurus PlayerAnimationController.
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     public class PlayerController : MonoBehaviour
@@ -13,15 +14,9 @@ namespace Game.Core
         [Header("Config")]
         [SerializeField] private PlayerMovementConfig config;
 
-        [Header("Animator (opsional)")]
-        [SerializeField] private Animator animator;
-        private static readonly int AnimSpeed = Animator.StringToHash("Speed");
-        private static readonly int AnimIsFrozen = Animator.StringToHash("IsFrozen");
-
         private Rigidbody2D rb;
         private float currentVelocityX;
         private float inputX;
-        private bool facingRight = true;
 
         public PlayerMoveState CurrentState { get; private set; } = PlayerMoveState.Idle;
 
@@ -44,8 +39,6 @@ namespace Game.Core
             }
 
             inputX = Input.GetAxisRaw("Horizontal");
-            UpdateFacing();
-            UpdateAnimator();
         }
 
         private void FixedUpdate()
@@ -61,27 +54,6 @@ namespace Game.Core
             CurrentState = CurrentState != PlayerMoveState.Frozen
                 ? (Mathf.Abs(currentVelocityX) > 0.05f ? PlayerMoveState.Walking : PlayerMoveState.Idle)
                 : PlayerMoveState.Frozen;
-        }
-
-        private void UpdateFacing()
-        {
-            if (inputX > 0.01f && !facingRight) Flip();
-            else if (inputX < -0.01f && facingRight) Flip();
-        }
-
-        private void Flip()
-        {
-            facingRight = !facingRight;
-            Vector3 scale = transform.localScale;
-            scale.x *= -1f;
-            transform.localScale = scale;
-        }
-
-        private void UpdateAnimator()
-        {
-            if (animator == null) return;
-            animator.SetFloat(AnimSpeed, Mathf.Abs(currentVelocityX));
-            animator.SetBool(AnimIsFrozen, CurrentState == PlayerMoveState.Frozen);
         }
 
         public void SetFrozen(bool frozen)

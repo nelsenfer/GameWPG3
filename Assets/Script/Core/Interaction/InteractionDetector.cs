@@ -2,34 +2,21 @@ using UnityEngine;
 
 namespace Game.Core
 {
-    /// <summary>
-    /// Mendeteksi interactable terdekat dan memicu interaksi saat tombol ditekan.
-    /// </summary>
     public class InteractionDetector : MonoBehaviour
     {
         [Header("Config")]
         [SerializeField] private PlayerMovementConfig config;
         [SerializeField] private PlayerController playerController;
 
-        [Header("Events (opsional)")]
+        [Header("Events (opsional, untuk UI prompt dsb)")]
         [SerializeField] private InteractionEventChannel eventChannel;
 
         [Header("Input")]
         [SerializeField] private KeyCode interactKey = KeyCode.E;
 
         private IInteractable currentFocus;
-        private readonly Collider2D[] overlapBuffer = new Collider2D[16];
-
-        private void Awake()
-        {
-            if (playerController == null)
-                playerController = GetComponent<PlayerController>();
-
-            Debug.Log($"[InteractionDetector] Sensor aktif di {name}. Tombol interaksi: {interactKey}.", this);
-
-            if (config == null)
-                Debug.LogWarning($"[InteractionDetector] PlayerMovementConfig belum di-assign di {name}.", this);
-        }
+        private readonly Collider2D[] overlapBuffer = new Collider2D[8];
+        private ContactFilter2D contactFilter;
 
         private void Reset()
         {
@@ -39,25 +26,20 @@ namespace Game.Core
         private void Update()
         {
             if (playerController != null && playerController.CurrentState == PlayerMoveState.Frozen)
+            {
+                // Saat dialog/minigame: hapus fokus supaya prompt "E" hilang.
+                if (currentFocus != null)
+                {
+                    currentFocus = null;
+                    eventChannel?.RaiseFocusChanged(null);
+                }
                 return;
+            }
 
             DetectNearestInteractable();
 
-            if (Input.GetKeyDown(interactKey))
+            if (currentFocus != null && Input.GetKeyDown(interactKey) && currentFocus.CanInteract())
             {
-                if (currentFocus == null)
-                {
-                    LogInteractionDebug("Tombol E ditekan, tetapi tidak ada target interaksi.");
-                    return;
-                }
-
-                if (!currentFocus.CanInteract())
-                {
-                    LogInteractionDebug($"Tombol E ditekan, tetapi target {GetTargetName(currentFocus)} tidak dapat berinteraksi.");
-                    return;
-                }
-
-                LogInteractionDebug($"Player dapat berinteraksi dengan {GetTargetName(currentFocus)}.");
                 currentFocus.OnInteract(gameObject);
                 eventChannel?.RaiseInteracted(currentFocus);
             }
@@ -65,15 +47,14 @@ namespace Game.Core
 
         private void DetectNearestInteractable()
         {
-            if (config == null)
-            {
-                SetFocus(null);
-                return;
-            }
+            if (config == null) return;
 
-            ContactFilter2D contactFilter = new ContactFilter2D();
+            // Filter eksplisit: selalu ikut deteksi collider "Is Trigger",
+            // tidak tergantung Project Settings > Physics 2D > Queries Hit Triggers.
+            contactFilter.useTriggers = true;
             contactFilter.SetLayerMask(config.interactableLayer);
-            int colliderCount = Physics2D.OverlapCircle(
+
+            int count = Physics2D.OverlapCircle(
                 transform.position,
                 config.interactionRadius,
                 contactFilter,
@@ -83,50 +64,27 @@ namespace Game.Core
             IInteractable nearest = null;
             float nearestDist = float.MaxValue;
 
-            for (int i = 0; i < colliderCount; i++)
+            for (int i = 0; i < count; i++)
             {
-                Collider2D collider = overlapBuffer[i];
-                if (collider == null) continue;
+                var col = overlapBuffer[i];
+                if (col == null) continue;
 
-                IInteractable interactable = collider.GetComponentInParent(typeof(IInteractable)) as IInteractable;
-                if (interactable != null && interactable.CanInteract())
+                if (col.TryGetComponent<IInteractable>(out var interactable) && interactable.CanInteract())
                 {
-                    Component interactableComponent = interactable as Component;
-                    Vector3 targetPosition = interactableComponent != null
-                        ? interactableComponent.transform.position
-                        : collider.transform.position;
-                    float distance = (targetPosition - transform.position).sqrMagnitude;
-                    if (distance < nearestDist)
+                    float dist = (col.transform.position - transform.position).sqrMagnitude;
+                    if (dist < nearestDist)
                     {
-                        nearestDist = distance;
+                        nearestDist = dist;
                         nearest = interactable;
                     }
                 }
             }
 
-            SetFocus(nearest);
-        }
-
-        private void SetFocus(IInteractable target)
-        {
-            if (target != currentFocus)
+            if (nearest != currentFocus)
             {
-                currentFocus = target;
-                LogInteractionDebug(currentFocus == null
-                    ? "Player tidak berada di dekat target interaksi."
-                    : $"Player dapat berinteraksi dengan {GetTargetName(currentFocus)}. Tekan {interactKey}.");
+                currentFocus = nearest;
                 eventChannel?.RaiseFocusChanged(currentFocus);
             }
-        }
-
-        private void LogInteractionDebug(string message)
-        {
-            Debug.Log($"[InteractionDetector] {message}", this);
-        }
-
-        private static string GetTargetName(IInteractable target)
-        {
-            return target is Component component ? component.gameObject.name : target.GetType().Name;
         }
 
         public IInteractable GetCurrentFocus() => currentFocus;

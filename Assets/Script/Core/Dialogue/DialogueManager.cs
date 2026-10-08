@@ -31,6 +31,7 @@ namespace Game.Dialogue.Core
         [SerializeField] private VoidEventChannelSO dialogueEndedChannel;
 
         private Story story;
+        private System.Action onFinished;
         public bool IsDialogueActive { get; private set; }
 
         private void Awake()
@@ -53,6 +54,13 @@ namespace Game.Dialogue.Core
         {
             Debug.Log("[DialogueManager] StartDialogue() dipanggil.");
 
+            if (inkFile != null) story = new Story(inkFile.storyJson);
+            BeginDialogue();
+        }
+
+        private void BeginDialogue()
+        {
+
             if (story == null)
             {
                 Debug.LogError("[DialogueManager] story masih NULL. Cek apakah inkFile ter-assign dan file .ink tidak error compile.", this);
@@ -72,6 +80,24 @@ namespace Game.Dialogue.Core
 
             Debug.Log("[DialogueManager] Mulai ContinueStory() pertama kali.");
             ContinueStory();
+        }
+
+        /// <summary>
+        /// Memulai dialog dari InkFile tertentu tanpa mengubah perilaku
+        /// StartDialogue() yang memakai file default.
+        /// </summary>
+        public void StartDialogue(InkFile file, System.Action onFinishedCallback = null)
+        {
+            if (file == null)
+            {
+                Debug.LogError("[DialogueManager] InkFile dialog kosong.", this);
+                return;
+            }
+
+            story = new Story(file.storyJson);
+            onFinished = onFinishedCallback;
+            Debug.Log("[DialogueManager] StartDialogue(file) dipanggil.");
+            BeginDialogue();
         }
 
         public void ContinueStory()
@@ -176,6 +202,10 @@ namespace Game.Dialogue.Core
             IsDialogueActive = false;
             playerController?.SetFrozen(false);
             dialogueEndedChannel?.Raise();
+
+            System.Action callback = onFinished;
+            onFinished = null;
+            callback?.Invoke();
         }
     }
 }
