@@ -1,0 +1,336 @@
+fileFormatVersion: 2
+guid: c322eb83a9399324eba533a9bdfba6c7
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -5901572876091586023
+    second: buttonText_0
+  - first:
+      213: 4521572328318095766
+    second: buttonText_1
+  - first:
+      213: 545200853095822340
+    second: buttonText_2
+  - first:
+      213: -5241761347336351423
+    second: buttonText_3
+  - first:
+      213: -5432383175668726590
+    second: buttonText_4
+  - first:
+      213: 8921733488512580237
+    second: buttonText_5
+  - first:
+      213: -1034391684806229553
+    second: buttonText_6
+  - first:
+      213: -1587187069918638651
+    second: buttonText_7
+  - first:
+      213: -1389476142071602049
+    second: buttonText_8
+  - first:
+      213: 2636947923189826350
+    second: buttonText_9
+  - first:
+      213: -1562970425190429356
+    second: buttonText_10
+  - first:
+      213: 2907358215965798248
+    second: buttonText_11
+  - first:
+      213: -3935394517701943026
+    second: buttonText_12
+  - first:
+      213: -4963754246950950585
+    second: buttonText_13
+  - first:
+      213: -6704061833250650638
+    second: buttonText_14
+  - first:
+      213: -7186594768045158328
+    second: buttonText_15
+  - first:
+      213: -3787026608923110852
+    second: buttonText_16
+  - first:
+      213: -3390528292512953505
+    second: buttonText_17
+  - first:
+      213: 8123235660236355643
+    second: buttonText_18
+  - first:
+      213: 7977231095046687751
+    second: buttonText_19
+  - first:
+      213: -8977195810496887760
+    second: buttonText_20
+  - first:
+      213: 3444520270916430216
+    second: buttonText_21
+  - first:
+      213: 4143549576131394400
+    second: buttonText_22
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: buttonText_0
+      rect:
+        serializedVersion: 2
+        x: 211
+        y: 619
+        width: 284
+        height: 82
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 91a0b70bcb6691ea0800000000000000
+      internalID: -5901572876091586023
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: buttonText_4
+      rect:
+        serializedVersion: 2
+        x: 224
+        y: 460
+        width: 400
+        height: 77
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2c40572a84c4c94b0800000000000000
+      internalID: -5432383175668726590
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: buttonText_12
+      rect:
+        serializedVersion: 2
+        x: 198
+        y: 281
+        width: 309
+        height: 82
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e012b59698ba269c0800000000000000
+      internalID: -3935394517701943026
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: buttonText_19
+      rect:
+        serializedVersion: 2
+        x: 201
+        y: 128
+        width: 205
+        height: 68
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 70c457f6a61d4be60800000000000000
+      internalID: 7977231095046687751
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 7d1d23b5421440646b7210879b084c89
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      buttonText_0: -5901572876091586023
+      buttonText_1: 4521572328318095766
+      buttonText_10: -1562970425190429356
+      buttonText_11: 2907358215965798248
+      buttonText_12: -3935394517701943026
+      buttonText_13: -4963754246950950585
+      buttonText_14: -6704061833250650638
+      buttonText_15: -7186594768045158328
+      buttonText_16: -3787026608923110852
+      buttonText_17: -3390528292512953505
+      buttonText_18: 8123235660236355643
+      buttonText_19: 7977231095046687751
+      buttonText_2: 545200853095822340
+      buttonText_20: -8977195810496887760
+      buttonText_21: 3444520270916430216
+      buttonText_22: 4143549576131394400
+      buttonText_3: -5241761347336351423
+      buttonText_4: -5432383175668726590
+      buttonText_5: 8921733488512580237
+      buttonText_6: -1034391684806229553
+      buttonText_7: -1587187069918638651
+      buttonText_8: -1389476142071602049
+      buttonText_9: 2636947923189826350
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

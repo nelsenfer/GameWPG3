@@ -1,58 +1,75 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI; // Wajib ditambahkan untuk mengakses komponen UI (Image/Text)
 using System.Collections;
 
 namespace UI.Components
 {
-    [AddComponentMenu("UI/Components/Hover Transform Button")]
+    [AddComponentMenu("UI/Components/Hover Color Button")]
     public class HoverTransformButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
-        [Header("Transform Effects")]
-        [SerializeField] private Vector3 hoverScale = new Vector3(1.1f, 1.1f, 1f);
+        [Header("Color Effects")]
+        [SerializeField] private Color hoverColor = Color.white;
         [SerializeField] private float duration = 0.15f;
 
-        private Vector3 defaultScale;
-        private Coroutine scaleCoroutine;
+        private Graphic targetGraphic;
+        private Color defaultColor;
+        private Coroutine colorCoroutine;
 
         private void Awake()
         {
-            defaultScale = transform.localScale;
+            // Mengambil komponen Image atau Text yang ada di GameObject ini
+            targetGraphic = GetComponent<Graphic>();
+            
+            if (targetGraphic != null)
+            {
+                defaultColor = targetGraphic.color;
+            }
+            else
+            {
+                Debug.LogWarning("Tidak ada komponen Image/Text yang ditemukan di " + gameObject.name);
+            }
         }
 
         private void OnEnable()
         {
-            transform.localScale = defaultScale;
+            if (targetGraphic != null)
+            {
+                targetGraphic.color = defaultColor;
+            }
         }
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            StartScaleAnimation(hoverScale);
+            if (targetGraphic != null)
+                StartColorAnimation(hoverColor);
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            StartScaleAnimation(defaultScale);
+            if (targetGraphic != null)
+                StartColorAnimation(defaultColor);
         }
 
-        private void StartScaleAnimation(Vector3 targetScale)
+        private void StartColorAnimation(Color targetColor)
         {
-            if (scaleCoroutine != null) StopCoroutine(scaleCoroutine);
-            scaleCoroutine = StartCoroutine(AnimateScale(targetScale));
+            if (colorCoroutine != null) StopCoroutine(colorCoroutine);
+            colorCoroutine = StartCoroutine(AnimateColor(targetColor));
         }
 
-        private IEnumerator AnimateScale(Vector3 targetScale)
+        private IEnumerator AnimateColor(Color targetColor)
         {
-            Vector3 startScale = transform.localScale;
+            Color startColor = targetGraphic.color;
             float elapsed = 0f;
 
             while (elapsed < duration)
             {
                 elapsed += Time.unscaledDeltaTime;
-                transform.localScale = Vector3.Lerp(startScale, targetScale, elapsed / duration);
+                targetGraphic.color = Color.Lerp(startColor, targetColor, elapsed / duration);
                 yield return null;
             }
 
-            transform.localScale = targetScale;
+            targetGraphic.color = targetColor;
         }
     }
 }
