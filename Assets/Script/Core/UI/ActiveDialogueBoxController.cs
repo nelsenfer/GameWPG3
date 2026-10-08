@@ -1,4 +1,7 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 using Game.Core;
 using Game.Dialogue.Core;
 using Game.Dialogue.Events;
@@ -18,6 +21,8 @@ namespace Game.Dialogue.UI
         [SerializeField] private ChatBubbleUI bubble;
         [SerializeField] private GameObject bubbleRoot;
         [SerializeField] private DialogueManager dialogueManager;
+        [Tooltip("Opsional: selama panel log terbuka, klik/Space tidak melanjutkan dialog.")]
+        [SerializeField] private LogPanelController logPanel;
 
         [Header("Events")]
         [SerializeField] private DialogueLineEventChannel lineEventChannel;
@@ -46,12 +51,29 @@ namespace Game.Dialogue.UI
         private void Update()
         {
             if (!isDialogueVisible || isChoiceActive) return;
+            if (logPanel != null && logPanel.IsOpen) return;
 
-            // Klik kiri mouse ATAU tekan tombol apa saja (keyboard/gamepad) → lanjut.
-            bool advancePressed = Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return);
+            // Klik kiri mouse (bukan di atas tombol UI, misal tombol Log) ATAU Space/Enter → lanjut.
+            bool clicked = Input.GetMouseButtonDown(0) && !IsPointerOverButton();
+            bool advancePressed = clicked || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return);
 
             if (advancePressed)
                 dialogueManager?.ContinueStory();
+        }
+
+        private static readonly List<RaycastResult> raycastResults = new List<RaycastResult>();
+
+        private static bool IsPointerOverButton()
+        {
+            if (EventSystem.current == null) return false;
+
+            PointerEventData data = new PointerEventData(EventSystem.current) { position = Input.mousePosition };
+            raycastResults.Clear();
+            EventSystem.current.RaycastAll(data, raycastResults);
+
+            foreach (RaycastResult r in raycastResults)
+                if (r.gameObject.GetComponentInParent<Button>() != null) return true;
+            return false;
         }
 
         private void HandleLine(DialogueLinePayload payload)

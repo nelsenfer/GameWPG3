@@ -473,6 +473,7 @@ GameObject:
   - component: {fileID: 2847812371371485626}
   - component: {fileID: 8472029483821068481}
   - component: {fileID: 5328094078991487848}
+  - component: {fileID: 3145388199043668479}
   m_Layer: 5
   m_Name: 'ChatBubble '
   m_TagString: Untagged
@@ -527,3 +528,23 @@ MonoBehaviour:
   bubbleBackground: {fileID: 1068056305198072713}
   npcBubbleColor: {r: 1, g: 1, b: 1, a: 1}
   playerBubbleColor: {r: 0.7, g: 0.85, b: 1, a: 1}
+--- !u!114 &3145388199043668479
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8708971384960053177}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_IgnoreLayout: 0
+  m_MinWidth: 150
+  m_MinHeight: -1
+  m_PreferredWidth: -1
+  m_PreferredHeight: 150
+  m_FlexibleWidth: -1
+  m_FlexibleHeight: -1
+  m_LayoutPriority: 1

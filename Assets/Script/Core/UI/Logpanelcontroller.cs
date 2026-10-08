@@ -15,6 +15,14 @@ namespace Game.Dialogue.UI
         [Tooltip("GameObject root panel log — biasanya GameObject 'Scroll View'.")]
         [SerializeField] private GameObject logPanelRoot;
 
+        [Header("Layout (opsional tapi disarankan)")]
+        [Tooltip("RectTransform 'Content' di dalam Scroll View. Dipakai untuk menghitung ulang layout tiap panel dibuka.")]
+        [SerializeField] private RectTransform logContent;
+        [SerializeField] private UnityEngine.UI.ScrollRect scrollRect;
+
+        /// <summary>True selama panel log sedang terbuka.</summary>
+        public bool IsOpen => logPanelRoot != null && logPanelRoot.activeSelf;
+
         private void Awake()
         {
             if (logPanelRoot != null)
@@ -24,7 +32,9 @@ namespace Game.Dialogue.UI
         [ContextMenu("TEST: Open Log Dialog")]
         public void OpenLogDialog()
         {
-            if (logPanelRoot != null) logPanelRoot.SetActive(true);
+            if (logPanelRoot == null) return;
+            logPanelRoot.SetActive(true);
+            RefreshLayout();
         }
 
         [ContextMenu("TEST: Close Log Dialog")]
@@ -36,7 +46,23 @@ namespace Game.Dialogue.UI
         /// <summary>Dipakai nanti untuk tombol "Log" yang sama (toggle buka/tutup).</summary>
         public void ToggleLogDialog()
         {
-            if (logPanelRoot != null) logPanelRoot.SetActive(!logPanelRoot.activeSelf);
+            if (logPanelRoot == null) return;
+
+            bool open = !logPanelRoot.activeSelf;
+            logPanelRoot.SetActive(open);
+            if (open) RefreshLayout();
+        }
+
+        // Bubble dibuat saat panel masih nonaktif, jadi layout-nya baru bisa dihitung setelah panel aktif.
+        private void RefreshLayout()
+        {
+            if (logContent != null)
+                UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(logContent);
+
+            Canvas.ForceUpdateCanvases();
+
+            if (scrollRect != null)
+                scrollRect.verticalNormalizedPosition = 0f; // langsung ke baris terbaru
         }
     }
 }
