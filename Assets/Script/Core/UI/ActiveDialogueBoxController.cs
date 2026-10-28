@@ -24,6 +24,14 @@ namespace Game.Dialogue.UI
         [Tooltip("Opsional: selama panel log terbuka, klik/Space tidak melanjutkan dialog.")]
         [SerializeField] private LogPanelController logPanel;
 
+        [Header("Gaya yang ditangani kotak ini")]
+        [Tooltip("Narasi (#narasi): kotak ini memang tempatnya.")]
+        [SerializeField] private bool handlesNarration = true;
+        [Tooltip("Dialog karakter (tanpa tag).")]
+        [SerializeField] private bool handlesCharacter = true;
+        [Tooltip("Chat HP (#hp).")]
+        [SerializeField] private bool handlesPhone = false;
+
         [Header("Events")]
         [SerializeField] private DialogueLineEventChannel lineEventChannel;
         [SerializeField] private DialogueChoicesEventChannel choicesEventChannel;
@@ -31,6 +39,16 @@ namespace Game.Dialogue.UI
 
         private bool isChoiceActive = false;
         private bool isDialogueVisible = false;
+
+        private bool Handles(DialogueStyle style)
+        {
+            switch (style)
+            {
+                case DialogueStyle.Narration: return handlesNarration;
+                case DialogueStyle.Phone: return handlesPhone;
+                default: return handlesCharacter;
+            }
+        }
 
         private void OnEnable()
         {
@@ -78,7 +96,14 @@ namespace Game.Dialogue.UI
 
         private void HandleLine(DialogueLinePayload payload)
         {
-            isChoiceActive = false; // baris baru datang → reset, belum ada choice untuk baris ini
+            isChoiceActive = false;
+
+            if (!Handles(payload.style))
+            {
+                SetVisible(false);
+                return;
+            }
+
             SetVisible(true);
             bubble?.SetData(payload.speaker, payload.text);
         }

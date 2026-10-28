@@ -55,6 +55,7 @@ namespace Game.Dialogue.Core
             Debug.Log("[DialogueManager] StartDialogue() dipanggil.");
 
             if (inkFile != null) story = new Story(inkFile.storyJson);
+            onFinished = null;
             BeginDialogue();
         }
 
@@ -113,8 +114,8 @@ namespace Game.Dialogue.Core
                 string rawLine = story.Continue().Trim();
                 Debug.Log($"[DialogueManager] Baris Ink mentah: \"{rawLine}\"");
 
-                DialogueLinePayload payload = ParseLine(rawLine);
-                Debug.Log($"[DialogueManager] Payload hasil parse -> speaker: {(payload.speaker != null ? payload.speaker.displayName : "NULL/fallback")}, text: \"{payload.text}\"");
+                DialogueLinePayload payload = ParseLine(rawLine, story.currentTags);
+                Debug.Log($"[DialogueManager] Payload hasil parse -> style: {payload.style}, speaker: {(payload.speaker != null ? payload.speaker.displayName : "NULL/fallback")}, text: \"{payload.text}\"");
 
                 if (lineEventChannel != null)
                 {
@@ -165,8 +166,14 @@ namespace Game.Dialogue.Core
             ContinueStory();
         }
 
-        private DialogueLinePayload ParseLine(string rawLine)
+        private DialogueLinePayload ParseLine(string rawLine, System.Collections.Generic.List<string> tags)
         {
+            DialogueStyle style = ParseStyleFromTags(tags);
+
+            // Narasi tidak punya pembicara; titik dua di dalam teks tetap bagian dari narasi.
+            if (style == DialogueStyle.Narration)
+                return new DialogueLinePayload(null, rawLine, style);
+
             int separatorIndex = rawLine.IndexOf(':');
             if (separatorIndex > 0 && separatorIndex < 30)
             {
@@ -175,12 +182,26 @@ namespace Game.Dialogue.Core
                 CharacterData speaker = characterDatabase != null ? characterDatabase.GetByID(speakerID) : null;
 
                 if (speaker != null)
-                    return new DialogueLinePayload(speaker, text);
+                    return new DialogueLinePayload(speaker, text, style);
 
                 Debug.LogWarning($"[DialogueManager] SpeakerID \"{speakerID}\" tidak ketemu di CharacterDatabase. Cek characterID di CharacterData sama persis (case-sensitive)?");
             }
 
-            return new DialogueLinePayload(fallbackSpeaker, rawLine);
+            return new DialogueLinePayload(fallbackSpeaker, rawLine, style);
+        }
+
+        private DialogueStyle ParseStyleFromTags(System.Collections.Generic.List<string> tags)
+        {
+            if (tags == null) return DialogueStyle.Character;
+
+            foreach (string tag in tags)
+            {
+                string normalizedTag = tag.Trim().ToLowerInvariant();
+                if (normalizedTag == "narasi") return DialogueStyle.Narration;
+                if (normalizedTag == "hp") return DialogueStyle.Phone;
+            }
+
+            return DialogueStyle.Character;
         }
 
         private ChoiceAlignment ParseAlignmentFromTags(System.Collections.Generic.List<string> tags)

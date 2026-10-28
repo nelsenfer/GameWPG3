@@ -28,6 +28,10 @@ namespace Game.Dialogue.UI
         {
             if (dialogueText != null) dialogueText.text = text;
 
+            // Narasi tidak memiliki pembicara maupun portrait.
+            if (portraitImage != null)
+                portraitImage.gameObject.SetActive(speaker != null && speaker.portrait != null);
+
             if (speaker != null)
             {
                 if (nameText != null) nameText.text = speaker.displayName;
