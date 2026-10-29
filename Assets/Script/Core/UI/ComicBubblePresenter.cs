@@ -24,6 +24,8 @@ namespace Game.Dialogue.UI
         [SerializeField] private Image tailImage;
         [Tooltip("Jarak minimal ekor dari sudut bubble.")]
         [SerializeField] private float tailEdgeMargin = 40f;
+        [Tooltip("Ekor di sudut bubble: bubble melebar menjauh dari pembicara.")]
+        [SerializeField] private bool tailAtCorner = true;
 
         [Header("Posisi")]
         [Tooltip("Kosong = Camera.main.")]
@@ -132,20 +134,28 @@ namespace Game.Dialogue.UI
             Vector2 speakerScreen = Vector2.zero;
             bool hasTarget = currentAnchor != null && cam != null;
             Vector2 screen;
+            Vector2 size = Vector2.Scale(bubbleRect.rect.size, bubbleRect.lossyScale);
+            Vector2 pivot = bubbleRect.pivot;
 
             if (hasTarget)
             {
                 Vector3 speakerWorld = cam.WorldToScreenPoint(currentAnchor.BubbleWorldPosition);
                 speakerScreen = new Vector2(speakerWorld.x, speakerWorld.y);
                 screen = speakerScreen + pixelOffset * canvas.scaleFactor;
+
+                if (tailAtCorner)
+                {
+                    float sign = speakerScreen.x < Screen.width * 0.5f ? 1f : -1f;
+                    float cornerInset = tailEdgeMargin * canvas.scaleFactor;
+                    screen.x = speakerScreen.x + pixelOffset.x * canvas.scaleFactor
+                             + sign * (size.x * 0.5f - cornerInset);
+                }
             }
             else
             {
                 screen = new Vector2(Screen.width * fallbackViewport.x, Screen.height * fallbackViewport.y);
             }
 
-            Vector2 size = Vector2.Scale(bubbleRect.rect.size, bubbleRect.lossyScale);
-            Vector2 pivot = bubbleRect.pivot;
             float minX = edgePadding + size.x * pivot.x;
             float maxX = Screen.width - edgePadding - size.x * (1f - pivot.x);
             float minY = edgePadding + size.y * pivot.y;
