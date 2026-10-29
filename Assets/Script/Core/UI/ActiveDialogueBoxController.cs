@@ -81,7 +81,7 @@ namespace Game.Dialogue.UI
 
         private static readonly List<RaycastResult> raycastResults = new List<RaycastResult>();
 
-        private static bool IsPointerOverButton()
+        public static bool IsPointerOverButton()
         {
             if (EventSystem.current == null) return false;
 

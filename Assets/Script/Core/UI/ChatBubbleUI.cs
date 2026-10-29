@@ -23,6 +23,9 @@ namespace Game.Dialogue.UI
         [SerializeField] private Color npcBubbleColor = Color.white;
         [SerializeField] private Color playerBubbleColor = new Color(0.7f, 0.85f, 1f);
 
+        /// <summary>Teks dialog, dipakai presenter chat HP untuk efek mengetik.</summary>
+        public TMP_Text DialogueText => dialogueText;
+
         /// <summary>Isi kotak ini dengan data karakter & teks. Tidak mengubah posisi apapun.</summary>
         public void SetData(CharacterData speaker, string text)
         {
