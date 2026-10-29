@@ -6,7 +6,7 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] private GameObject settingsPanel;
     
     [Header("Scene Config")]
-    [SerializeField] private string gameplaySceneName = "Gameplay";
+    [SerializeField] private string gameplaySceneName = "Ingame";
     [SerializeField] private string creditSceneName = "Credit";
 
     public void OnPlayButtonClicked()

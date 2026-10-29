@@ -1,15 +1,27 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
-public class InGamePauseUI : MonoBehaviour
+public class InGamePauseController : MonoBehaviour
 {
-    [SerializeField] private GameObject pauseMenuPanel;
-    [SerializeField] private string mainMenuSceneName = "MainMenu";
+    [Header("Panels")]
+    [Tooltip("Panel pause yang akan dimunculkan saat ESC ditekan.")]
+    [SerializeField] private GameObject pausePanel;
 
-    private bool _isPaused = false;
+    [Header("Audio (Opsional)")]
+    [SerializeField] private string clickSfxId = "Click";
+
+    private bool isPaused = false;
+
+    private void Start()
+    {
+        // Pastikan panel pause tertutup saat game dimulai
+        if (pausePanel != null) pausePanel.SetActive(false);
+    }
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
+        // Cek jika tombol ESC (Escape) ditekan menggunakan Input System v6
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             TogglePause();
         }
@@ -17,27 +29,44 @@ public class InGamePauseUI : MonoBehaviour
 
     public void TogglePause()
     {
-        _isPaused = !_isPaused;
-        if (pauseMenuPanel != null) pauseMenuPanel.SetActive(_isPaused);
+        isPaused = !isPaused;
 
-        if (NavigationManager.Instance != null)
-            NavigationManager.Instance.SetTimeScale(_isPaused ? 0f : 1f);
+        if (isPaused)
+        {
+            // Munculkan panel
+            if (pausePanel != null) pausePanel.SetActive(true);
+            
+            // Hentikan waktu game (Game membeku)
+            Time.timeScale = 0f; 
+            
+            // Mainkan SFX klik
+            PlayClickSFX();
+        }
+        else
+        {
+            // Sembunyikan panel
+            if (pausePanel != null) pausePanel.SetActive(false);
+            
+            // Lanjutkan waktu game
+            Time.timeScale = 1f;
+            
+            PlayClickSFX();
+        }
     }
 
-    public void OnResumeButtonClicked()
+    // Fungsi ini bisa dipanggil oleh tombol "Resume" atau "Close" di dalam panel pause (via OnClick Inspector)
+    public void ClosePausePanel()
     {
-        TogglePause();
+        if (isPaused) TogglePause();
     }
 
-    public void OnRetryButtonClicked()
+    private void PlayClickSFX()
     {
-        if (NavigationManager.Instance != null)
-            NavigationManager.Instance.ReloadCurrentScene();
-    }
-
-    public void OnMainMenuButtonClicked()
-    {
-        if (NavigationManager.Instance != null)
-            NavigationManager.Instance.LoadScene(mainMenuSceneName);
+        // Menggunakan PlaySFX dari AudioManager. 
+        // Karena Time.timeScale = 0, pastikan AudioManager-mu memutar SFX di UI yang tidak terpengaruh waktu game.
+        if (AudioManager.Instance != null && !string.IsNullOrEmpty(clickSfxId))
+        {
+            AudioManager.Instance.PlaySFX(clickSfxId);
+        }
     }
 }

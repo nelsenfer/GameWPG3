@@ -11,60 +11,71 @@ using Game.Dialogue.Events;
 
 namespace Game.Dialogue.UI
 {
-    /// <summary>
-    /// Menampilkan baris Ink bertag #hp sebagai chat HP.
-    /// - Layar awal: daftar kontak (pilihan Ink bertag #kontak:ID, #preview:teks, #badge:angka).
-    ///   Pemain memilih kontak, percakapannya terbuka, selesai -> kembali ke daftar.
-    /// - Pesan masuk (pembicara bukan sisi pemain): muncul langsung, klik / Space / Enter untuk lanjut.
-    /// - Balasan pemain (pembicara isPlayerSide): pemain menahan tombol APA SAJA sebentar,
-    ///   lalu teks balasan "terketik" sendiri. Kalau ada pilihan balasan, pilih dulu, baru mekanik ini jalan.
-    /// Script ini hanya mengisi data; tata letak (posisi, ukuran, warna) diatur lewat Unity Editor.
-    /// </summary>
     public class PhoneChatPresenter : MonoBehaviour
     {
         private enum State { Idle, WaitingHold, Typing }
 
+        private class ChatMessage
+        {
+            public CharacterData speaker;
+            public string text;
+            public bool outgoing;
+        }
+
+        private class ChatThread
+        {
+            public string id;
+            public CharacterData character;
+            public bool isCompleted; 
+            public readonly List<ChatMessage> messages = new List<ChatMessage>();
+        }
+
+        private class UnreadContact
+        {
+            public int index;
+            public string preview;
+            public int badge;
+        }
+
         [Header("Tampilan HP")]
-        [Tooltip("Root panel HP. Dimatikan saat tidak ada chat.")]
         [SerializeField] private GameObject phoneRoot;
-        [Tooltip("Content di dalam Scroll View HP (diberi Vertical Layout Group + Content Size Fitter).")]
         [SerializeField] private RectTransform content;
         [SerializeField] private ScrollRect scrollRect;
         [SerializeField] private ChatBubbleUI incomingBubblePrefab;
         [SerializeField] private ChatBubbleUI outgoingBubblePrefab;
 
         [Header("Daftar kontak (layar awal HP)")]
-        [Tooltip("Panel daftar kontak. Tampil saat HP menunggu pemain memilih kontak.")]
         [SerializeField] private GameObject contactListRoot;
-        [Tooltip("Wadah baris kontak (beri Vertical Layout Group).")]
         [SerializeField] private RectTransform contactListContent;
         [SerializeField] private PhoneContactItemUI contactItemPrefab;
-        [Tooltip("Untuk mencari foto/nama kontak dari ID di tag #kontak.")]
         [SerializeField] private CharacterDatabase characterDatabase;
-        [Tooltip("Jeda sebelum daftar kontak muncul lagi setelah balasan selesai.")]
-        [SerializeField] private float returnToListDelay = 0.8f;
 
-        [Header("Layar percakapan (opsional)")]
-        [Tooltip("Objek yang disembunyikan saat daftar kontak tampil. Kosong = Scroll View.")]
+        [Header("Layar percakapan")]
         [SerializeField] private GameObject threadRoot;
-        [Tooltip("Header percakapan (foto + nama lawan chat). Opsional.")]
         [SerializeField] private GameObject threadHeader;
         [SerializeField] private TMP_Text threadNameText;
         [SerializeField] private Image threadAvatar;
+        [SerializeField] private GameObject backButton;
 
-        [Header("Petunjuk balas (opsional)")]
-        [Tooltip("Objek petunjuk 'tahan tombol apa saja'. Tampil hanya saat menunggu pemain membalas.")]
+        [Header("Wadah UI Bawah")]
         [SerializeField] private GameObject holdHint;
-        [Tooltip("Image bertipe Filled untuk menunjukkan progres tahan tombol.")]
         [SerializeField] private Image holdFill;
+        [SerializeField] private Transform choiceContainer;
+        [SerializeField] private TMP_InputField inputField;
+        [SerializeField] private bool choicesReplaceInput = false;
 
         [Header("Mekanik balas")]
+        [SerializeField] private bool requireHoldToType = true;
         [SerializeField] private float holdSeconds = 0.35f;
         [SerializeField] private float charsPerSecond = 35f;
+        [SerializeField] private float autoTypeDelay = 0.4f;
+        [SerializeField] private float firstCharPause = 0f;
+        [SerializeField] private float sendDelay = 0.17f;
+        [Tooltip("Jeda sebelum HP tertutup saat semua chat selesai.")]
+        [SerializeField] private float closePhoneDelay = 1.5f; // <-- FITUR BARU
 
         [Header("References")]
         [SerializeField] private DialogueManager dialogueManager;
-        [Tooltip("Opsional: selama panel log terbuka, input chat HP diabaikan.")]
         [SerializeField] private LogPanelController logPanel;
 
         [Header("Events")]
@@ -77,9 +88,21 @@ namespace Game.Dialogue.UI
         private bool isChoiceActive;
         private bool released;
         private float holdTimer;
-        private ChatBubbleUI pendingBubble;
         private Coroutine typingRoutine;
-        private List<Choice> pendingContactChoices;
+
+        private bool hasPendingMessage;
+        private CharacterData pendingSpeaker;
+        private string pendingText;
+        private bool isProcessingReply = false; 
+
+        private readonly Dictionary<string, ChatThread> threads = new Dictionary<string, ChatThread>();
+        private readonly List<string> contactOrder = new List<string>();
+        private string currentChatId;
+        private bool viewingHistoryOnly;
+
+        private List<Choice> contactChoices;
+        private List<Choice> lastKnownContactChoices; 
+        private List<Button> spawnedChoiceButtons = new List<Button>();
 
         private void OnEnable()
         {
@@ -89,6 +112,7 @@ namespace Game.Dialogue.UI
 
             SetPhoneVisible(false);
             SetHoldUI(false);
+            PrepareInputField();
         }
 
         private void OnDisable()
@@ -100,18 +124,18 @@ namespace Game.Dialogue.UI
 
         private void Update()
         {
-            if (!phoneVisible || isChoiceActive) return;
+            if (!phoneVisible) return;
+            if (contactListRoot != null && contactListRoot.activeSelf) return;
             if (logPanel != null && logPanel.IsOpen) return;
 
             switch (state)
             {
                 case State.Idle:
+                    if (viewingHistoryOnly || isChoiceActive || contactChoices != null) break;
+                    if (isProcessingReply) break;
+
                     if (AdvancePressed())
-                    {
-                        // Percakapan selesai & daftar kontak menunggu: klik membukanya.
-                        if (pendingContactChoices != null) ShowContactList(pendingContactChoices);
-                        else dialogueManager?.ContinueStory();
-                    }
+                        dialogueManager?.ContinueStory();
                     break;
 
                 case State.WaitingHold:
@@ -120,141 +144,268 @@ namespace Game.Dialogue.UI
             }
         }
 
-        // ---------- Event dari DialogueManager ----------
-
         private void HandleLine(DialogueLinePayload payload)
         {
-            isChoiceActive = false;
-            pendingContactChoices = null;
+            if (isProcessingReply) return;
 
-            // Baris bukan chat HP -> HP disembunyikan (riwayatnya tetap sampai dialog selesai).
+            StopTyping();
+            contactChoices = null; 
+            viewingHistoryOnly = false;
+            ClearChoiceButtons(); 
+
             if (payload.style != DialogueStyle.Phone)
             {
-                StopTyping();
                 SetHoldUI(false);
                 state = State.Idle;
-                SetPhoneVisible(false);
+                // SetPhoneVisible(false); <-- JANGAN MATIKAN HP DISINI, TUNGGU END
                 return;
             }
 
-            // Panel harus aktif SEBELUM bubble dibuat, supaya layout langsung terhitung.
             SetPhoneVisible(true);
             ShowThreadView();
 
             bool outgoing = payload.speaker != null && payload.speaker.isPlayerSide;
-            ChatBubbleUI prefab = outgoing ? outgoingBubblePrefab : incomingBubblePrefab;
-            if (prefab == null || content == null)
+
+            if (outgoing)
             {
-                Debug.LogError("[PhoneChatPresenter] Prefab bubble masuk/keluar atau Content belum di-assign.", this);
-                state = State.Idle;
-                return;
+                BeginReply(payload);
             }
-
-            ChatBubbleUI bubble = Instantiate(prefab, content);
-            bubble.SetData(payload.speaker, payload.text);
-            if (bubble.DialogueText != null) bubble.DialogueText.ForceMeshUpdate();
-            RefreshLayout();
-            StartCoroutine(RefreshNextFrame()); // ukuran bubble kadang baru benar setelah 1 frame
-
-            if (outgoing) BeginReply(bubble);
-            else state = State.Idle;
-        }
-
-        private IEnumerator RefreshNextFrame()
-        {
-            yield return null;
-            RefreshLayout();
+            else
+            {
+                AddMessage(payload.speaker, payload.text, false);
+                state = State.Idle;
+            }
         }
 
         private void HandleChoices(List<Choice> choices)
         {
-            Debug.Log("[PhoneChatPresenter] Pilihan masuk. Daftar kontak? " + PhoneChoiceTags.IsContactList(choices)
-                + (choices.Count > 0 ? " | contoh teks: \"" + choices[0].text + "\"" : ""));
-
-            // Pilihan kontak: ditampilkan sebagai daftar kontak HP, bukan tombol biasa.
             if (PhoneChoiceTags.IsContactList(choices))
             {
-                bool nothingShownYet = content == null || content.childCount == 0;
-                if (state == State.Idle && nothingShownYet) ShowContactList(choices);
-                else pendingContactChoices = choices; // tunggu balasan selesai dulu
+                contactChoices = choices;
+                lastKnownContactChoices = choices; 
+
+                if (AreAllChatsCompleted()) 
+                {
+                    // JIKA SEMUA SELESAI, TUNGGU JEDA LALU TUTUP
+                    StartCoroutine(ClosePhoneRoutine());
+                    return;
+                }
+
+                if (state == State.Idle && (content == null || content.childCount == 0))
+                {
+                    ShowContactList();
+                }
                 return;
             }
 
-            isChoiceActive = true; // pemain wajib memilih lewat tombol; klik sembarangan tidak melanjutkan
+            isChoiceActive = true;
             SetHoldUI(false);
+            state = State.Idle;
+
+            ClearChoiceButtons();
+            if (choiceContainer != null && choices.Count > 0)
+            {
+                choiceContainer.gameObject.SetActive(true);
+                SetInputFieldVisible(false);
+
+                for (int i = 0; i < choices.Count; i++)
+                {
+                    int index = i;
+                    Button btn = CreateChoiceButton(choices[i].text, () => {
+                        isChoiceActive = false;
+                        ClearChoiceButtons();
+                        isProcessingReply = true; 
+                        dialogueManager?.ChooseOption(index);
+                    });
+                    spawnedChoiceButtons.Add(btn);
+                }
+            }
+        }
+
+        private IEnumerator ClosePhoneRoutine()
+        {
+            // Beri jeda agar pemain bisa melihat chat terakhir
+            yield return new WaitForSecondsRealtime(closePhoneDelay);
+            dialogueManager?.ContinueStory(); 
         }
 
         private void HandleDialogueEnded()
         {
-            StopTyping();
+            StopTyping(); 
             SetHoldUI(false);
             state = State.Idle;
             isChoiceActive = false;
-            pendingContactChoices = null;
+            contactChoices = null;
+            viewingHistoryOnly = false;
             SetPhoneVisible(false);
-
-            ClearChildren(content);
-            ClearChildren(contactListContent);
+            ClearChoiceButtons();
+            isProcessingReply = false; 
         }
 
-        // ---------- Daftar kontak ----------
-
-        private void ShowContactList(List<Choice> choices)
+        public void OnBackButtonClicked()
         {
-            pendingContactChoices = null;
-            isChoiceActive = true; // klik sembarangan tidak melanjutkan; pemain wajib pilih kontak
+            StopTyping(); 
+            ClearChildren(content);
+            ShowContactList();
+            isProcessingReply = false; 
+        }
+
+        private bool AreAllChatsCompleted()
+        {
+            if (contactChoices == null) return false;
+
+            foreach (var choice in contactChoices)
+            {
+                if (PhoneChoiceTags.TryParseContact(choice, out string id, out _, out _))
+                {
+                    if (!threads.TryGetValue(id, out ChatThread thread) || !thread.isCompleted)
+                        return false;
+                }
+            }
+            return true; 
+        }
+
+        private void ShowContactList()
+        {
             SetHoldUI(false);
             SetPhoneVisible(true);
+            viewingHistoryOnly = false;
+            currentChatId = null;
 
             SetThreadViewActive(false);
             if (contactListRoot != null) contactListRoot.SetActive(true);
+            if (backButton != null) backButton.SetActive(false);
 
             ClearChildren(contactListContent);
-            if (contactItemPrefab == null || contactListContent == null)
+            if (contactItemPrefab == null || contactListContent == null) return;
+
+            List<Choice> choicesToRender = contactChoices ?? lastKnownContactChoices;
+
+            Dictionary<string, UnreadContact> unread = new Dictionary<string, UnreadContact>();
+            if (choicesToRender != null)
             {
-                Debug.LogError("[PhoneChatPresenter] Contact Item Prefab / Contact List Content belum di-assign.", this);
-                return;
+                for (int i = 0; i < choicesToRender.Count; i++)
+                {
+                    PhoneChoiceTags.TryParseContact(choicesToRender[i], out string contactId, out string preview, out int badge);
+                    if (string.IsNullOrEmpty(contactId) || unread.ContainsKey(contactId)) continue;
+
+                    unread[contactId] = new UnreadContact { index = i, preview = preview, badge = badge };
+                    if (!contactOrder.Contains(contactId)) contactOrder.Add(contactId);
+                }
             }
 
-            for (int i = 0; i < choices.Count; i++)
+            foreach (string id in contactOrder)
             {
-                int index = i;
-                Choice choice = choices[i];
+                UnreadContact unreadInfo = null;
+                ChatThread readThread = null;
+                bool isUnread = unread.TryGetValue(id, out unreadInfo);
+                bool isRead = !isUnread && threads.TryGetValue(id, out readThread) && readThread.messages.Count > 0;
+                
+                if (!isUnread && !isRead) continue;
 
-                PhoneChoiceTags.TryParseContact(choice, out string characterId, out string preview, out int badge);
-
-                CharacterData character = characterDatabase != null ? characterDatabase.GetByID(characterId) : null;
-
+                CharacterData character = characterDatabase != null ? characterDatabase.GetByID(id) : null;
                 PhoneContactItemUI item = Instantiate(contactItemPrefab, contactListContent);
-                item.Set(character, characterId, preview, badge, () => PickContact(index, character, characterId));
-            }
 
+                if (isUnread)
+                {
+                    int index = unreadInfo.index;
+                    item.Set(character, id, unreadInfo.preview, unreadInfo.badge, () => PickUnreadContact(index, character, id));
+                }
+                else
+                {
+                    ChatThread thread = readThread;
+                    item.Set(character, id, LastPreview(thread), 0, () => OpenReadContact(thread));
+                }
+            }
             LayoutRebuilder.ForceRebuildLayoutImmediate(contactListContent);
         }
 
-        private void PickContact(int choiceIndex, CharacterData character, string fallbackName)
+        private void PickUnreadContact(int choiceIndex, CharacterData character, string id)
         {
             isChoiceActive = false;
+            contactChoices = null; 
+            viewingHistoryOnly = false;
             if (contactListRoot != null) contactListRoot.SetActive(false);
+            ClearChoiceButtons();
 
-            // Tiap percakapan dimulai dari layar bersih.
+            currentChatId = id;
+            ChatThread thread = GetOrCreateThread(id, character);
+            ApplyThreadHeader(thread);
             ClearChildren(content);
 
-            if (threadNameText != null) threadNameText.text = character != null ? character.displayName : fallbackName;
+            ShowThreadView();
+            RebuildHistory(thread); 
+            dialogueManager?.ChooseOption(choiceIndex);
+        }
+
+        private void OpenReadContact(ChatThread thread)
+        {
+            viewingHistoryOnly = true;
+            currentChatId = thread.id;
+            if (contactListRoot != null) contactListRoot.SetActive(false);
+
+            ApplyThreadHeader(thread);
+            ClearChildren(content);
+            ShowThreadView();
+            RebuildHistory(thread);
+        }
+
+        private ChatThread GetOrCreateThread(string id, CharacterData character)
+        {
+            if (!threads.TryGetValue(id, out ChatThread thread))
+            {
+                thread = new ChatThread { id = id, character = character, isCompleted = false };
+                threads.Add(id, thread);
+            }
+            else if (thread.character == null)
+            {
+                thread.character = character;
+            }
+
+            if (!contactOrder.Contains(id)) contactOrder.Add(id);
+            return thread;
+        }
+
+        private void ApplyThreadHeader(ChatThread thread)
+        {
+            CharacterData character = thread.character;
+            if (threadNameText != null) threadNameText.text = character != null ? character.displayName : thread.id;
             if (threadAvatar != null)
             {
                 bool hasPortrait = character != null && character.portrait != null;
                 if (hasPortrait) threadAvatar.sprite = character.portrait;
             }
+        }
 
-            ShowThreadView();
-            dialogueManager?.ChooseOption(choiceIndex);
+        private void RebuildHistory(ChatThread thread)
+        {
+            foreach (ChatMessage message in thread.messages)
+                SpawnBubble(message.speaker, message.text, message.outgoing, false);
+            RefreshLayout();
+        }
+
+        private void AddMessage(CharacterData speaker, string text, bool outgoing)
+        {
+            if (currentChatId != null && threads.TryGetValue(currentChatId, out ChatThread thread))
+                thread.messages.Add(new ChatMessage { speaker = speaker, text = text, outgoing = outgoing });
+
+            SpawnBubble(speaker, text, outgoing, true);
+        }
+
+        private static string LastPreview(ChatThread thread)
+        {
+            if (thread.messages.Count == 0) return string.Empty;
+            string text = thread.messages[thread.messages.Count - 1].text ?? string.Empty;
+            return text.Replace('\n', ' ');
         }
 
         private void ShowThreadView()
         {
             if (contactListRoot != null) contactListRoot.SetActive(false);
             SetThreadViewActive(true);
+            if (backButton != null) backButton.SetActive(true); 
+            // Pastikan Input Field selalu muncul saat masuk ke thread chat
+            SetInputFieldVisible(true);
         }
 
         private void SetThreadViewActive(bool active)
@@ -262,27 +413,91 @@ namespace Game.Dialogue.UI
             GameObject thread = threadRoot != null ? threadRoot : (scrollRect != null ? scrollRect.gameObject : null);
             if (thread != null) thread.SetActive(active);
             if (threadHeader != null) threadHeader.SetActive(active);
+            if (backButton != null) backButton.SetActive(active);
         }
 
-        private static void ClearChildren(RectTransform parent)
+        private Button CreateChoiceButton(string text, UnityEngine.Events.UnityAction onClick)
+        {
+            GameObject btnObj = new GameObject("ChoiceButton");
+            btnObj.transform.SetParent(choiceContainer, false);
+
+            Image img = btnObj.AddComponent<Image>();
+            img.color = new Color(0.9f, 0.9f, 0.9f); 
+
+            Button btn = btnObj.AddComponent<Button>();
+            btn.onClick.AddListener(onClick);
+
+            GameObject txtObj = new GameObject("Text");
+            txtObj.transform.SetParent(btnObj.transform, false);
+            TMP_Text txt = txtObj.AddComponent<TextMeshProUGUI>();
+            txt.text = text;
+            txt.color = Color.black;
+            txt.alignment = TextAlignmentOptions.Center;
+
+            RectTransform txtRect = txtObj.GetComponent<RectTransform>();
+            txtRect.anchorMin = Vector2.zero;
+            txtRect.anchorMax = Vector2.one;
+            txtRect.offsetMin = Vector2.zero;
+            txtRect.offsetMax = Vector2.zero;
+
+            LayoutElement layout = btnObj.AddComponent<LayoutElement>();
+            layout.minHeight = 40f;
+
+            return btn;
+        }
+
+        private void ClearChoiceButtons()
+        {
+            foreach (var btn in spawnedChoiceButtons)
+            {
+                if (btn != null) Destroy(btn.gameObject);
+            }
+            spawnedChoiceButtons.Clear();
+            if (choiceContainer != null) choiceContainer.gameObject.SetActive(false);
+            SetInputFieldVisible(true);
+        }
+
+        private void ClearChildren(RectTransform parent)
         {
             if (parent == null) return;
             for (int i = parent.childCount - 1; i >= 0; i--)
-                Destroy(parent.GetChild(i).gameObject);
+            {
+                Transform child = parent.GetChild(i);
+                child.SetParent(null, false); 
+                Destroy(child.gameObject);
+            }
         }
 
-        // ---------- Mekanik balas ----------
-
-        private void BeginReply(ChatBubbleUI bubble)
+        private void SpawnBubble(CharacterData speaker, string text, bool outgoing, bool refresh)
         {
-            pendingBubble = bubble;
-            holdTimer = 0f;
-            released = !Input.anyKey; // tombol yang masih tertahan dari klik sebelumnya tidak dihitung
-            state = State.WaitingHold;
+            ChatBubbleUI prefab = outgoing ? outgoingBubblePrefab : incomingBubblePrefab;
+            if (prefab == null || content == null) return;
 
-            if (bubble.DialogueText != null) bubble.DialogueText.maxVisibleCharacters = 0;
-            SetHoldUI(true);
-            UpdateHoldFill(0f);
+            ChatBubbleUI bubble = Instantiate(prefab, content);
+            bubble.SetData(speaker, text);
+            if (bubble.DialogueText != null) bubble.DialogueText.ForceMeshUpdate();
+            if (refresh) RefreshLayout();
+        }
+
+        private void BeginReply(DialogueLinePayload payload)
+        {
+            hasPendingMessage = true;
+            pendingSpeaker = payload.speaker;
+            pendingText = payload.text ?? string.Empty;
+            SetInputText(string.Empty); 
+
+            if (requireHoldToType)
+            {
+                holdTimer = 0f;
+                released = !Input.anyKey;
+                state = State.WaitingHold;
+                SetHoldUI(true);
+                UpdateHoldFill(0f);
+            }
+            else
+            {
+                StartTyping(autoTypeDelay);
+            }
         }
 
         private void UpdateHold()
@@ -298,62 +513,111 @@ namespace Game.Dialogue.UI
 
             UpdateHoldFill(holdSeconds > 0f ? holdTimer / holdSeconds : 1f);
 
-            if (holdTimer >= holdSeconds) StartTyping();
+            if (holdTimer >= holdSeconds) StartTyping(0f);
         }
 
-        private void StartTyping()
+        private void StartTyping(float startDelay)
         {
             state = State.Typing;
             SetHoldUI(false);
-            typingRoutine = StartCoroutine(TypeRoutine(pendingBubble));
+            typingRoutine = StartCoroutine(TypeRoutine(startDelay));
         }
 
-        private IEnumerator TypeRoutine(ChatBubbleUI bubble)
+        private IEnumerator TypeRoutine(float startDelay)
         {
-            TMP_Text text = bubble != null ? bubble.DialogueText : null;
+            if (startDelay > 0f) yield return new WaitForSecondsRealtime(startDelay);
 
-            if (text != null)
+            string full = pendingText ?? string.Empty;
+            int total = full.Length;
+            float cps = Mathf.Max(1f, charsPerSecond);
+            float shown = 0f;
+            int lastCount = -1;
+
+            if (firstCharPause > 0f && total > 1)
             {
-                text.ForceMeshUpdate();
-                int total = text.textInfo.characterCount;
-                float shown = 0f;
-
-                while (text != null && shown < total)
-                {
-                    shown += charsPerSecond * Time.unscaledDeltaTime;
-                    text.maxVisibleCharacters = Mathf.Min(total, Mathf.FloorToInt(shown));
-                    yield return null;
-                }
-
-                if (text != null) text.maxVisibleCharacters = int.MaxValue;
+                SetInputText(full.Substring(0, SafeLength(full, 1)));
+                lastCount = 1;
+                shown = 1f;
+                yield return new WaitForSecondsRealtime(firstCharPause);
             }
 
+            while (shown < total)
+            {
+                shown += cps * Time.unscaledDeltaTime;
+                int count = Mathf.Min(total, Mathf.FloorToInt(shown));
+
+                if (count != lastCount)
+                {
+                    lastCount = count;
+                    SetInputText(full.Substring(0, SafeLength(full, count)));
+                }
+                yield return null;
+            }
+
+            SetInputText(full);
+            if (sendDelay > 0f) yield return new WaitForSecondsRealtime(sendDelay);
+
             typingRoutine = null;
-            pendingBubble = null;
+            CommitPendingMessage();
             state = State.Idle;
             ScrollToBottom();
 
-            // Balasan selesai & ada daftar kontak menunggu: kembali ke daftar setelah jeda singkat.
-            if (pendingContactChoices != null)
-            {
-                yield return new WaitForSecondsRealtime(returnToListDelay);
-                if (pendingContactChoices != null && state == State.Idle)
-                    ShowContactList(pendingContactChoices);
-            }
+            isProcessingReply = false; 
+            dialogueManager?.ContinueStory();
+        }
+
+        private void CommitPendingMessage()
+        {
+            if (!hasPendingMessage) return;
+            hasPendingMessage = false;
+
+            SetInputText(string.Empty);
+            AddMessage(pendingSpeaker, pendingText, true);
+
+            pendingSpeaker = null;
+            pendingText = null;
         }
 
         private void StopTyping()
         {
             if (typingRoutine != null) StopCoroutine(typingRoutine);
             typingRoutine = null;
-
-            // Kalau terpotong, tampilkan teks utuh supaya tidak ada balasan yang setengah terlihat.
-            if (pendingBubble != null && pendingBubble.DialogueText != null)
-                pendingBubble.DialogueText.maxVisibleCharacters = int.MaxValue;
-            pendingBubble = null;
+            CommitPendingMessage();
+            
+            if (currentChatId != null && threads.TryGetValue(currentChatId, out ChatThread thread))
+            {
+                thread.isCompleted = true;
+            }
         }
 
-        // ---------- Util ----------
+        private void PrepareInputField()
+        {
+            if (inputField == null) return;
+            inputField.readOnly = true; 
+            inputField.text = string.Empty;
+        }
+
+        private void SetInputFieldVisible(bool visible)
+        {
+            if (inputField != null && choicesReplaceInput) inputField.gameObject.SetActive(visible);
+        }
+
+        private void SetInputText(string value)
+        {
+            if (inputField != null) inputField.text = value;
+        }
+
+        private static int SafeLength(string s, int count)
+        {
+            if (count <= 0) return 0;
+            if (count >= s.Length) return s.Length;
+
+            int open = s.LastIndexOf('<', count - 1);
+            if (open < 0 || s.LastIndexOf('>', count - 1) > open) return count;
+
+            int close = s.IndexOf('>', open);
+            return close >= 0 ? close + 1 : count;
+        }
 
         private static bool AdvancePressed()
         {

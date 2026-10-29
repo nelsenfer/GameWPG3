@@ -47,6 +47,10 @@ public class AudioManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+        if (SceneManager.GetActiveScene().name == "MainMenu")
+        {
+            PlayBGM("MainBgm");
+        }
     }
 
     private void InitializeDictionaries()

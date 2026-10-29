@@ -149,7 +149,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   settingsPanel: {fileID: 450131042}
-  gameplaySceneName: Gameplay
+  gameplaySceneName: Ingame
   creditSceneName: Credit
 --- !u!4 &170222
 Transform:
@@ -968,6 +968,7 @@ Transform:
   - {fileID: 353264466}
   - {fileID: 170222}
   - {fileID: 1823394326}
+  - {fileID: 1888535344}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &403172210
@@ -1390,7 +1391,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 424195457}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1888535345}
+        m_TargetAssemblyTypeName: UI.Components.TabController, Assembly-CSharp
+        m_MethodName: SelectTabById
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: display
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &424195457
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1514,7 +1527,8 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1189855904}
+  - {fileID: 957273565}
+  - {fileID: 1973821431}
   m_Father: {fileID: 87451983}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -1628,7 +1642,13 @@ MonoBehaviour:
   masterSource: {fileID: 2076717480}
   musicSource: {fileID: 1116089074}
   sfxSource: {fileID: 1516364827}
-  bgmList: []
+  bgmList:
+  - id: MainBgm
+    clip: {fileID: 8300000, guid: 6062237f7ccc7c7458144e60451f4a38, type: 3}
+    defaultVolume: 1
+  - id: TypingBgm
+    clip: {fileID: 8300000, guid: bb0736a0558b0ef48bd7dfb607246d52, type: 3}
+    defaultVolume: 1
   sfxList: []
   typingSfxId: Typing
   typingSfxDelay: 0.08
@@ -2739,7 +2759,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 835312252}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1888535345}
+        m_TargetAssemblyTypeName: UI.Components.TabController, Assembly-CSharp
+        m_MethodName: SelectTabById
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: about
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &835312252
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2831,7 +2863,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -591, y: 0}
+  m_AnchoredPosition: {x: -747, y: 0}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &850998344
@@ -3152,7 +3184,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 957273564}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -3161,11 +3193,12 @@ RectTransform:
   - {fileID: 424195454}
   - {fileID: 835312249}
   - {fileID: 850998343}
-  m_Father: {fileID: 1189855904}
+  - {fileID: 1189855904}
+  m_Father: {fileID: 450131043}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.000026703, y: 351}
+  m_AnchoredPosition: {x: -0.000026703, y: 448}
   m_SizeDelta: {x: 1268.7224, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &991047403
@@ -3655,19 +3688,17 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1189855903}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 957273565}
-  - {fileID: 1973821431}
-  m_Father: {fileID: 450131043}
+  m_Children: []
+  m_Father: {fileID: 957273565}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -400, y: -230.1484}
+  m_AnchoredPosition: {x: 0, y: -78.11835}
+  m_SizeDelta: {x: 251.2776, y: -96.9687}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1189855905
 MonoBehaviour:
@@ -3689,7 +3720,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -2296552054835153169, guid: eadc8c15504a3474c81af39b626b5ba8, type: 3}
+  m_Sprite: {fileID: 0}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -3955,7 +3986,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1331171772}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1888535345}
+        m_TargetAssemblyTypeName: UI.Components.TabController, Assembly-CSharp
+        m_MethodName: SelectTabById
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 1
+          m_FloatArgument: 0
+          m_StringArgument: sound
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1331171772
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6067,6 +6110,61 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1886347035}
   m_CullTransparentMesh: 1
+--- !u!1 &1888535343
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1888535344}
+  - component: {fileID: 1888535345}
+  m_Layer: 0
+  m_Name: tabController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1888535344
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1888535343}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 386496436}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1888535345
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1888535343}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ea5d531ad084264d832c96355791be4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  tabs:
+  - tabId: display
+    tabButton: {fileID: 424195455}
+    tabPanel: {fileID: 1372634727}
+  - tabId: sound
+    tabButton: {fileID: 1331171770}
+    tabPanel: {fileID: 377990815}
+  - tabId: about
+    tabButton: {fileID: 835312250}
+    tabPanel: {fileID: 90550725}
+  defaultTabIndex: 0
 --- !u!1 &1941050167
 GameObject:
   m_ObjectHideFlags: 0
@@ -6129,7 +6227,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1973821430}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -6137,7 +6235,7 @@ RectTransform:
   - {fileID: 1372634728}
   - {fileID: 377990816}
   - {fileID: 90550726}
-  m_Father: {fileID: 1189855904}
+  m_Father: {fileID: 450131043}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
