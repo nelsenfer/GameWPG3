@@ -51,6 +51,7 @@ namespace Game.Dialogue.UI
         {
             ClearChoiceButtons();
             if (continueButton != null) continueButton.gameObject.SetActive(false);
+            if (PhoneChoiceTags.IsContactList(choices)) return;
             if (choiceButtonPrefab == null || choiceButtonContainer == null || dialogueManager == null) return;
 
             for (int i = 0; i < choices.Count; i++)

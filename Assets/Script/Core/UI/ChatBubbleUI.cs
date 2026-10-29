@@ -23,15 +23,28 @@ namespace Game.Dialogue.UI
         [SerializeField] private Color npcBubbleColor = Color.white;
         [SerializeField] private Color playerBubbleColor = new Color(0.7f, 0.85f, 1f);
 
-        /// <summary>Teks dialog, dipakai presenter chat HP untuk efek mengetik.</summary>
+        [Header("Lebar otomatis (opsional, untuk bubble chat HP)")]
+        [Tooltip("Layout Element di objek Bubble. Kosong = fitur ini mati.")]
+        [SerializeField] private LayoutElement bubbleLayout;
+        [Tooltip("Lebar maksimal bubble. Teks yang lebih panjang turun ke baris berikutnya.")]
+        [SerializeField] private float maxBubbleWidth = 450f;
+        [Tooltip("Total padding kiri + kanan pada Bubble (samakan dengan Vertical Layout Group-nya).")]
+        [SerializeField] private float horizontalPadding = 30f;
+
+        /// <summary>Teks isi dialog (dipakai chat HP untuk efek mengetik).</summary>
         public TMP_Text DialogueText => dialogueText;
 
-        /// <summary>Isi kotak ini dengan data karakter & teks. Tidak mengubah posisi apapun.</summary>
+        /// <summary>Isi kotak ini dengan data karakter dan teks.</summary>
         public void SetData(CharacterData speaker, string text)
         {
             if (dialogueText != null) dialogueText.text = text;
 
-            // Narasi tidak memiliki pembicara maupun portrait.
+            if (bubbleLayout != null && dialogueText != null)
+            {
+                float wanted = dialogueText.preferredWidth + horizontalPadding;
+                bubbleLayout.preferredWidth = Mathf.Min(wanted, maxBubbleWidth);
+            }
+
             if (portraitImage != null)
                 portraitImage.gameObject.SetActive(speaker != null && speaker.portrait != null);
 
