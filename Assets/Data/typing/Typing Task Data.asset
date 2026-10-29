@@ -23,8 +23,9 @@ MonoBehaviour:
   - Tagihan bulan ini harus dibayar sebelum tanggal lima
   - Besok masih ada rapat pagi yang tidak boleh terlambat
   randomizeOrder: 1
-  durationSeconds: 60
-  minTypedChars: 150
+  durationSeconds: 10
+  minTypedWords: 0
+  minTypedChars: 10
   minAccuracyPercent: 80
   passMessage: Laporan terkirim.
   failMessage: Revisi lagi...

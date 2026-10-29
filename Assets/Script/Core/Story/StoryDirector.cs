@@ -11,14 +11,13 @@ namespace Game.Progression
 {
     public enum BeatTrigger
     {
-        [Tooltip("Jalan sendiri begitu giliran beat ini tiba.")]
-        Auto,
-        [Tooltip("Jalan saat pemain menekan E pada objek Target.")]
-        Interact,
-        [Tooltip("Jalan saat pemain masuk ke area Target (collider trigger).")]
-        EnterArea
+        [Tooltip("Jalan sendiri begitu giliran beat ini tiba.")] Auto,
+        [Tooltip("Jalan saat pemain menekan E pada objek Target.")] Interact,
+        [Tooltip("Jalan saat pemain masuk ke area Target (collider trigger).")] EnterArea,
+        [Tooltip("Jalan saat pemain mengklik tombol UI (Button) pada Target, misal benda di panel meja.")] ClickButton
     }
 
+    /// <summary>Interaksi sampingan selama sebuah beat aktif (misal komputer: "kopi dulu").</summary>
     [Serializable]
     public class WaitingHint
     {
@@ -27,6 +26,7 @@ namespace Game.Progression
         public InkFile dialogue;
     }
 
+    /// <summary>Satu kejadian dalam cerita. Dijalankan berurutan dari atas ke bawah.</summary>
     [Serializable]
     public class StoryBeat
     {
@@ -59,8 +59,8 @@ namespace Game.Progression
     }
 
     /// <summary>
-    /// Satu-satunya tempat urutan cerita. Beat dijalankan linear; beat berikutnya
-    /// baru aktif setelah beat sebelumnya selesai.
+    /// Satu-satunya tempat urutan cerita. Pasang di ==Manager==.
+    /// Beat dijalankan linear; beat berikutnya baru aktif setelah beat sebelumnya selesai.
     /// </summary>
     public class StoryDirector : MonoBehaviour
     {
@@ -79,6 +79,7 @@ namespace Game.Progression
         private int index;
         private bool busy;
         private MinigameLauncher activeMinigame;
+        private StoryBeat runningBeat;
 
         public StoryBeat CurrentBeat => index >= 0 && index < beats.Count ? beats[index] : null;
 
@@ -87,28 +88,49 @@ namespace Game.Progression
             SetupBeatObjects();
         }
 
-        /// <summary>Dipakai chapter yang menyusun beat lewat kode.</summary>
+        /// <summary>Dipakai chapter yang menyusun beat lewat kode (misal IntroChapter).</summary>
         public void LoadBeats(List<StoryBeat> newBeats)
         {
-            beats = newBeats ?? new List<StoryBeat>();
+            beats = newBeats;
             SetupBeatObjects();
         }
 
         private void SetupBeatObjects()
         {
-            foreach (StoryBeat beat in beats)
+            foreach (StoryBeat b in beats)
             {
-                if (beat == null) continue;
-
-                if (beat.trigger == BeatTrigger.Interact) EnsureTarget(beat.target);
-                if (beat.trigger == BeatTrigger.EnterArea) EnsureZone(beat.target);
-
-                if (beat.hints == null) continue;
-                foreach (WaitingHint hint in beat.hints)
-                {
-                    if (hint != null) EnsureTarget(hint.target);
-                }
+                if (b.trigger == BeatTrigger.Interact) EnsureTarget(b.target);
+                if (b.trigger == BeatTrigger.EnterArea) EnsureZone(b.target);
+                if (b.trigger == BeatTrigger.ClickButton) EnsureButton(b.target);
+                foreach (WaitingHint h in b.hints) EnsureTarget(h.target);
             }
+        }
+
+        private readonly HashSet<GameObject> hookedButtons = new HashSet<GameObject>();
+
+        private void EnsureButton(GameObject go)
+        {
+            if (go == null || hookedButtons.Contains(go)) return;
+
+            UnityEngine.UI.Button button = go.GetComponent<UnityEngine.UI.Button>();
+            if (button == null) button = go.GetComponentInChildren<UnityEngine.UI.Button>(true);
+            if (button == null)
+            {
+                Debug.LogWarning("[StoryDirector] '" + go.name + "' butuh komponen Button (beat ClickButton).", go);
+                return;
+            }
+
+            hookedButtons.Add(go);
+            button.onClick.AddListener(() => ButtonClicked(go));
+        }
+
+        private void ButtonClicked(GameObject go)
+        {
+            StoryBeat beat = CurrentBeat;
+            if (busy || beat == null) return;
+            if (beat.trigger != BeatTrigger.ClickButton || beat.target != go) return;
+            if (dialogueManager != null && dialogueManager.IsDialogueActive) return;
+            Run(beat);
         }
 
         private void Start()
@@ -117,27 +139,28 @@ namespace Game.Progression
             EnterBeat();
         }
 
+        // ---------- setup objek ----------
+
         private void EnsureTarget(GameObject go)
         {
             if (go == null) return;
-
-            StoryTarget target = go.GetComponent<StoryTarget>();
-            if (target == null) target = go.AddComponent<StoryTarget>();
-            target.director = this;
+            StoryTarget t = go.GetComponent<StoryTarget>();
+            if (t == null) t = go.AddComponent<StoryTarget>();
+            t.director = this;
         }
 
         private void EnsureZone(GameObject go)
         {
             if (go == null) return;
-
-            StoryZone zone = go.GetComponent<StoryZone>();
-            if (zone == null) zone = go.AddComponent<StoryZone>();
-            zone.director = this;
-
-            Collider2D collider = go.GetComponent<Collider2D>();
-            if (collider != null) collider.isTrigger = true;
+            StoryZone z = go.GetComponent<StoryZone>();
+            if (z == null) z = go.AddComponent<StoryZone>();
+            z.director = this;
+            Collider2D col = go.GetComponent<Collider2D>();
+            if (col != null) col.isTrigger = true;
             else Debug.LogWarning("[StoryDirector] Area '" + go.name + "' butuh Collider2D.", go);
         }
+
+        // ---------- alur beat ----------
 
         private void EnterBeat()
         {
@@ -170,9 +193,9 @@ namespace Game.Progression
 
         private void Run(StoryBeat beat)
         {
-            if (beat == null || busy) return;
-
             busy = true;
+            runningBeat = beat;
+
             beat.onTriggered?.Invoke();
             if (beat.showPanel != null) beat.showPanel.SetActive(true);
 
@@ -184,7 +207,6 @@ namespace Game.Progression
                     Abort(beat);
                     return;
                 }
-
                 dialogueManager.StartDialogue(beat.dialogue, () => AfterDialogue(beat));
             }
             else
@@ -210,11 +232,11 @@ namespace Game.Progression
 
         private void Update()
         {
+            // Minigame ditutup tanpa lulus -> beat tetap, bisa dicoba lagi.
             if (activeMinigame != null && !activeMinigame.IsOpen)
             {
                 activeMinigame = null;
                 busy = false;
-
                 StoryBeat beat = CurrentBeat;
                 if (beat != null && beat.trigger == BeatTrigger.Auto)
                     StartCoroutine(AutoRoutine(index));
@@ -225,10 +247,9 @@ namespace Game.Progression
         {
             activeMinigame = null;
             busy = false;
+            runningBeat = null;
 
-            if (beat.hideTargetAfter && beat.target != null)
-                beat.target.SetActive(false);
-
+            if (beat.hideTargetAfter && beat.target != null) beat.target.SetActive(false);
             beat.onFinished?.Invoke();
 
             index++;
@@ -239,20 +260,17 @@ namespace Game.Progression
         {
             if (beat.showPanel != null) beat.showPanel.SetActive(false);
             busy = false;
+            runningBeat = null;
         }
+
+        // ---------- dipanggil StoryTarget / StoryZone ----------
 
         private WaitingHint FindHint(GameObject go)
         {
             StoryBeat beat = CurrentBeat;
             if (beat == null) return null;
-            if (beat.hints == null) return null;
-
-            foreach (WaitingHint hint in beat.hints)
-            {
-                if (hint != null && hint.target == go && hint.dialogue != null)
-                    return hint;
-            }
-
+            foreach (WaitingHint h in beat.hints)
+                if (h.target == go && h.dialogue != null) return h;
             return null;
         }
 
@@ -262,33 +280,31 @@ namespace Game.Progression
             return beat != null && beat.trigger == BeatTrigger.Interact && beat.target == go;
         }
 
-        public bool CanInteractWith(StoryTarget target)
+        public bool CanInteractWith(StoryTarget t)
         {
-            if (target == null || busy) return false;
+            if (busy) return false;
             if (dialogueManager != null && dialogueManager.IsDialogueActive) return false;
-            return IsMainTarget(target.gameObject) || FindHint(target.gameObject) != null;
+            return IsMainTarget(t.gameObject) || FindHint(t.gameObject) != null;
         }
 
-        public string PromptFor(StoryTarget target)
+        public string PromptFor(StoryTarget t)
         {
-            if (target == null) return "";
-            if (IsMainTarget(target.gameObject)) return CurrentBeat.prompt;
-
-            WaitingHint hint = FindHint(target.gameObject);
-            return hint != null ? hint.prompt : "";
+            if (IsMainTarget(t.gameObject)) return CurrentBeat.prompt;
+            WaitingHint h = FindHint(t.gameObject);
+            return h != null ? h.prompt : "";
         }
 
-        public void Interacted(StoryTarget target)
+        public void Interacted(StoryTarget t)
         {
-            if (!CanInteractWith(target)) return;
+            if (!CanInteractWith(t)) return;
 
-            if (IsMainTarget(target.gameObject))
+            if (IsMainTarget(t.gameObject))
             {
                 Run(CurrentBeat);
                 return;
             }
 
-            WaitingHint hint = FindHint(target.gameObject);
+            WaitingHint hint = FindHint(t.gameObject);
             if (hint != null && dialogueManager != null)
             {
                 busy = true;
@@ -296,12 +312,11 @@ namespace Game.Progression
             }
         }
 
-        public void ZoneEntered(StoryZone zone)
+        public void ZoneEntered(StoryZone z)
         {
             StoryBeat beat = CurrentBeat;
-            if (zone == null || busy || beat == null) return;
-            if (beat.trigger != BeatTrigger.EnterArea || beat.target != zone.gameObject) return;
-
+            if (busy || beat == null) return;
+            if (beat.trigger != BeatTrigger.EnterArea || beat.target != z.gameObject) return;
             Run(beat);
         }
     }

@@ -22,9 +22,14 @@ namespace Game.Typing
 
         [Header("Aturan")]
         [Min(5f)] public float durationSeconds = 60f;
-        [Tooltip("Jumlah huruf minimal yang harus diketik (benar + salah) sampai timer habis.")]
+        [Tooltip("Syarat lulus dalam KATA (diisi > 0 = dipakai, mengabaikan Min Typed Chars). 1 kata = 5 huruf yang benar, standar WPM.")]
+        [Min(0)] public int minTypedWords = 0;
+        [Tooltip("Syarat lulus dalam HURUF yang benar. Dipakai kalau Min Typed Words = 0.")]
         [Min(0)] public int minTypedChars = 150;
         [Range(0f, 100f)] public float minAccuracyPercent = 80f;
+
+        /// <summary>Huruf benar yang dibutuhkan untuk lulus (dari kata kalau diisi, kalau tidak dari huruf).</summary>
+        public int RequiredChars => minTypedWords > 0 ? minTypedWords * 5 : minTypedChars;
 
         [Header("Pesan Cerita di Layar Hasil")]
         [TextArea] public string passMessage = "Laporan terkirim.";

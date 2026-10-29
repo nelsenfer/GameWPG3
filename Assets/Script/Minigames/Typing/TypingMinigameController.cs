@@ -25,7 +25,7 @@ namespace Game.Typing
     /// </summary>
     public class TypingMinigameController : MonoBehaviour
     {
-        private enum State { Closed, Idle, Running, Finished }
+        private enum State { Closed, Standby, Idle, Running, Finished }
 
         [Header("References")]
         [SerializeField] private PlayerController playerController;
@@ -108,12 +108,43 @@ namespace Game.Typing
             if (closeButton != null) closeButton.onClick.RemoveListener(OnCloseClicked);
         }
 
+        /// <summary>
+        /// Tampilkan panel minigame di latar TANPA menerima input (misal tertutup chat HP).
+        /// Open() dengan task yang sama berikutnya langsung memulainya.
+        /// </summary>
+        public void ShowPreview(TypingTaskData data)
+        {
+            if (data == null || data.texts == null || data.texts.Count == 0)
+            {
+                Debug.LogError("[TypingMinigame] TypingTaskData kosong atau belum punya teks.", this);
+                return;
+            }
+
+            task = data;
+            playerController?.SetFrozen(true);
+            if (panelRoot != null) panelRoot.SetActive(true);
+            if (titleText != null) titleText.text = data.taskTitle;
+
+            ResetRound();
+            state = State.Standby;
+        }
+
         /// <summary>Buka minigame untuk 1 task. onPassed dipanggil kalau pemain lulus dan menutup layar hasil.</summary>
         public void Open(TypingTaskData data, Action onPassed)
         {
             if (data == null || data.texts == null || data.texts.Count == 0)
             {
                 Debug.LogError("[TypingMinigame] TypingTaskData kosong atau belum punya teks.", this);
+                return;
+            }
+
+            // Sudah tampil di latar (preview) dengan task yang sama: cukup dimulai, tampilan tidak diacak ulang.
+            if (state == State.Standby && task == data)
+            {
+                onPassedCallback = onPassed;
+                openedFrame = Time.frameCount;
+                playerController?.SetFrozen(true);
+                state = State.Idle;
                 return;
             }
 
@@ -130,7 +161,7 @@ namespace Game.Typing
 
         private void Update()
         {
-            if (state == State.Closed) return;
+            if (state == State.Closed || state == State.Standby) return;
             if (Time.frameCount <= openedFrame) return;
 
             if ((state == State.Idle || state == State.Finished) && Input.GetKeyDown(KeyCode.Escape))
@@ -223,13 +254,13 @@ namespace Game.Typing
             float wpm = (correctCount / 5f) / minutes; // standar: 5 huruf = 1 kata
 
             // Target huruf dihitung dari huruf yang BENAR saja, supaya tidak bisa asal spam.
-            passed = correctCount >= task.minTypedChars && accuracy >= task.minAccuracyPercent;
+            passed = correctCount >= task.RequiredChars && accuracy >= task.minAccuracyPercent;
 
             if (resultPanel != null) resultPanel.SetActive(true);
             if (resultStatusText != null) resultStatusText.text = passed ? "LULUS" : "BELUM CUKUP";
             if (resultWpmText != null) resultWpmText.text = $"{wpm:0} WPM";
             if (resultAccuracyText != null) resultAccuracyText.text = $"Akurasi {accuracy:0}% (min {task.minAccuracyPercent:0}%)";
-            if (resultCharsText != null) resultCharsText.text = $"Huruf benar {correctCount} (min {task.minTypedChars})  |  Salah {wrongCount}";
+            if (resultCharsText != null) resultCharsText.text = $"Huruf benar {correctCount} (min {task.RequiredChars})  |  Salah {wrongCount}";
             if (resultMessageText != null) resultMessageText.text = passed ? task.passMessage : task.failMessage;
 
             if (retryButton != null) retryButton.gameObject.SetActive(!passed);
@@ -266,7 +297,7 @@ namespace Game.Typing
             if (task == null) return;
 
             int typed = correctCount + wrongCount;
-            int goal = Mathf.Max(1, task.minTypedChars);
+            int goal = Mathf.Max(1, task.RequiredChars);
             float t = Mathf.Clamp01((float)correctCount / goal);
 
             // Sebelum mengetik apa pun, akurasi dianggap aman (100%).

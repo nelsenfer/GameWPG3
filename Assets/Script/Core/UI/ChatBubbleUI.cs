@@ -34,6 +34,9 @@ namespace Game.Dialogue.UI
         /// <summary>Teks isi dialog (dipakai chat HP untuk efek mengetik).</summary>
         public TMP_Text DialogueText => dialogueText;
 
+        /// <summary>Warna latar bubble saat ini, dipakai ekor bubble komik.</summary>
+        public Color BackgroundColor => bubbleBackground != null ? bubbleBackground.color : Color.white;
+
         /// <summary>Isi kotak ini dengan data karakter dan teks.</summary>
         public void SetData(CharacterData speaker, string text)
         {
