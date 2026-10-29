@@ -71,8 +71,8 @@ namespace Game.Dialogue.UI
         [SerializeField] private float autoTypeDelay = 0.4f;
         [SerializeField] private float firstCharPause = 0f;
         [SerializeField] private float sendDelay = 0.17f;
-        [Tooltip("Jeda sebelum HP tertutup saat semua chat selesai.")]
-        [SerializeField] private float closePhoneDelay = 1.5f; // <-- FITUR BARU
+        [Tooltip("Jeda setelah pesan balasan terkirim / sebelum HP tertutup saat chat selesai.")]
+        [SerializeField] private float closePhoneDelay = 1f;
 
         [Header("References")]
         [SerializeField] private DialogueManager dialogueManager;
@@ -214,7 +214,6 @@ namespace Game.Dialogue.UI
                     Button btn = CreateChoiceButton(choices[i].text, () => {
                         isChoiceActive = false;
                         ClearChoiceButtons();
-                        isProcessingReply = true; 
                         dialogueManager?.ChooseOption(index);
                     });
                     spawnedChoiceButtons.Add(btn);
@@ -244,6 +243,10 @@ namespace Game.Dialogue.UI
 
         public void OnBackButtonClicked()
         {
+            // Jangan batalkan proses penutupan HP jika balasan terakhir sudah terkirim
+            if (typingRoutine != null && !hasPendingMessage && contactChoices == null)
+                return;
+
             StopTyping(); 
             ClearChildren(content);
             ShowContactList();
@@ -481,6 +484,7 @@ namespace Game.Dialogue.UI
 
         private void BeginReply(DialogueLinePayload payload)
         {
+            isProcessingReply = true;
             hasPendingMessage = true;
             pendingSpeaker = payload.speaker;
             pendingText = payload.text ?? string.Empty;
@@ -557,11 +561,19 @@ namespace Game.Dialogue.UI
             SetInputText(full);
             if (sendDelay > 0f) yield return new WaitForSecondsRealtime(sendDelay);
 
-            typingRoutine = null;
             CommitPendingMessage();
-            state = State.Idle;
+            if (currentChatId != null && threads.TryGetValue(currentChatId, out ChatThread thread))
+            {
+                thread.isCompleted = true;
+            }
             ScrollToBottom();
 
+            // Beri jeda setelah bubble pesan tampil di layar sebelum lanjut / menutup HP
+            if (closePhoneDelay > 0f)
+                yield return new WaitForSecondsRealtime(closePhoneDelay);
+
+            typingRoutine = null;
+            state = State.Idle;
             isProcessingReply = false; 
             dialogueManager?.ContinueStory();
         }

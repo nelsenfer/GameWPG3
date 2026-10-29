@@ -43,14 +43,14 @@ public class AudioManager : MonoBehaviour
             DontDestroyOnLoad(gameObject);
             InitializeDictionaries();
         }
-        else
+        else if (Instance != this)
         {
+            Instance.PlayBGM("MainBgm");
             Destroy(gameObject);
+            return;
         }
-        if (SceneManager.GetActiveScene().name == "MainMenu")
-        {
-            PlayBGM("MainBgm");
-        }
+
+        PlayBGM("MainBgm");
     }
 
     private void InitializeDictionaries()

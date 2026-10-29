@@ -69,6 +69,12 @@ namespace Game.Typing
         [SerializeField] private Color wrongColor = new Color(0.9f, 0.3f, 0.3f);
         [SerializeField] private Color pendingColor = new Color(0.6f, 0.6f, 0.6f);
 
+        [Header("Audio")]
+        [Tooltip("ID BGM di AudioManager yang diputar saat minigame berjalan.")]
+        [SerializeField] private string bgmId = "TypingBgm";
+        [Tooltip("ID BGM di AudioManager yang diputar kembali di luar minigame (mode side-scrolling).")]
+        [SerializeField] private string mainBgmId = "MainBgm";
+
         private State state = State.Closed;
         private TypingTaskData task;
         private Action onPassedCallback;
@@ -145,6 +151,7 @@ namespace Game.Typing
                 openedFrame = Time.frameCount;
                 playerController?.SetFrozen(true);
                 state = State.Idle;
+                PlayMinigameBGM();
                 return;
             }
 
@@ -157,6 +164,7 @@ namespace Game.Typing
             if (titleText != null) titleText.text = data.taskTitle;
 
             ResetRound();
+            PlayMinigameBGM();
         }
 
         private void Update()
@@ -247,6 +255,7 @@ namespace Game.Typing
         private void Finish()
         {
             state = State.Finished;
+            StopMinigameBGM();
 
             int typed = correctCount + wrongCount;
             float accuracy = typed > 0 ? correctCount * 100f / typed : 0f;
@@ -397,6 +406,7 @@ namespace Game.Typing
             if (state != State.Finished) return;
             openedFrame = Time.frameCount;
             ResetRound();
+            PlayMinigameBGM();
         }
 
         private void OnCloseClicked()
@@ -408,8 +418,27 @@ namespace Game.Typing
             onPassedCallback = null;
             if (panelRoot != null) panelRoot.SetActive(false);
             playerController?.SetFrozen(false);
+            ResumeMainBGM();
 
             if (wasPassed) callback?.Invoke();
+        }
+
+        private void PlayMinigameBGM()
+        {
+            if (AudioManager.Instance != null && !string.IsNullOrEmpty(bgmId))
+                AudioManager.Instance.PlayBGM(bgmId);
+        }
+
+        private void StopMinigameBGM()
+        {
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.StopBGM();
+        }
+
+        private void ResumeMainBGM()
+        {
+            if (AudioManager.Instance != null && !string.IsNullOrEmpty(mainBgmId))
+                AudioManager.Instance.PlayBGM(mainBgmId);
         }
     }
 }

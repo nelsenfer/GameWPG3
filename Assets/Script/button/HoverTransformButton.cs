@@ -8,18 +8,22 @@ namespace UI.Components
     [AddComponentMenu("UI/Components/Hover Color Button")]
     public class HoverTransformButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
+        [Header("Target (Opsional)")]
+        [Tooltip("Kosongkan untuk otomatis memakai Image/Text di GameObject ini, atau isi dengan child Image (misal background hover).")]
+        [SerializeField] private Graphic targetGraphic;
+
         [Header("Color Effects")]
         [SerializeField] private Color hoverColor = Color.white;
         [SerializeField] private float duration = 0.15f;
 
-        private Graphic targetGraphic;
         private Color defaultColor;
         private Coroutine colorCoroutine;
 
         private void Awake()
         {
-            // Mengambil komponen Image atau Text yang ada di GameObject ini
-            targetGraphic = GetComponent<Graphic>();
+            // Mengambil komponen Image atau Text yang ada di GameObject ini jika belum di-assign
+            if (targetGraphic == null)
+                targetGraphic = GetComponent<Graphic>();
             
             if (targetGraphic != null)
             {
@@ -33,6 +37,20 @@ namespace UI.Components
 
         private void OnEnable()
         {
+            if (targetGraphic != null)
+            {
+                targetGraphic.color = defaultColor;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (colorCoroutine != null)
+            {
+                StopCoroutine(colorCoroutine);
+                colorCoroutine = null;
+            }
+
             if (targetGraphic != null)
             {
                 targetGraphic.color = defaultColor;
@@ -70,6 +88,7 @@ namespace UI.Components
             }
 
             targetGraphic.color = targetColor;
+            colorCoroutine = null;
         }
     }
 }
