@@ -2,15 +2,6 @@ using UnityEngine;
 
 namespace Game.Core
 {
-    /// <summary>
-    /// Hanya mengatur ANIMASI player (tidak ikut urus gerakan).
-    /// - Jalan kanan/kiri : parameter IsWalking, sprite di-flip kalau ke kiri
-    /// - Diam / tekan S   : idle menghadap kamera
-    /// - Tekan W sekali   : membelakangi kamera dan TETAP begitu (latch)
-    ///                      sampai tekan S atau mulai jalan kanan/kiri
-    ///
-    /// Status jalan dibaca dari PlayerController (stabil, tidak kedip antar frame).
-    /// </summary>
     public class PlayerAnimationController : MonoBehaviour
     {
         [Header("References")]
@@ -23,14 +14,19 @@ namespace Game.Core
         [SerializeField] private KeyCode backKey = KeyCode.W;
         [SerializeField] private KeyCode frontKey = KeyCode.S;
 
-        [Header("Arah sprite jalan asli")]
+        [Header("Config Animasi")]
         [Tooltip("Centang kalau gambar walk aslinya menghadap KANAN.")]
         [SerializeField] private bool artFacesRight = true;
+        [SerializeField] private float crossFadeDuration = 0.1f;
 
         private bool isBackLatched;
+        private int currentStateHash; // Melacak animasi aktif agar tidak dipanggil berulang (Poin 2 & 5)
 
-        private static readonly int IsWalkingHash = Animator.StringToHash("IsWalking");
-        private static readonly int IsBackHash = Animator.StringToHash("IsBack");
+        // Optimasi: Mengubah nama State di Animator menjadi Hash Integer (Poin 5)
+        // Nama-nama ini HARUS sama persis dengan nama kotak/node state di Animator Window
+        private static readonly int IdleHash = Animator.StringToHash("player");
+        private static readonly int WalkHash = Animator.StringToHash("Player_Walk");
+        private static readonly int BackHash = Animator.StringToHash("Player_Back");
 
         private void Reset()
         {
@@ -45,17 +41,19 @@ namespace Game.Core
             if (playerController == null) playerController = GetComponent<PlayerController>();
             if (animator == null) animator = GetComponentInChildren<Animator>();
             if (spriteRenderer == null) spriteRenderer = GetComponentInChildren<SpriteRenderer>();
-
-            if (playerController == null)
-                Debug.LogWarning("[PlayerAnimationController] PlayerController tidak ditemukan di objek ini.", this);
         }
 
         private void Update()
         {
+            CheckAnimation(); // Logika Transisi (Poin 3)
+        }
+
+        private void CheckAnimation()
+        {
             bool walking = playerController != null
                 && playerController.CurrentState == PlayerMoveState.Walking;
 
-            // Arah flip: pakai input langsung supaya responsif, bukan kecepatan.
+            // Arah flip sprite
             float inputX = Input.GetAxisRaw("Horizontal");
             if (walking && Mathf.Abs(inputX) > 0.01f && spriteRenderer != null)
             {
@@ -66,18 +64,42 @@ namespace Game.Core
             bool frozen = playerController != null
                 && playerController.CurrentState == PlayerMoveState.Frozen;
 
-            // W sekali = membelakangi dan bertahan. S atau mulai jalan = reset.
+            // Logika latch input menghadap belakang/depan
             if (!frozen && Input.GetKeyDown(backKey)) isBackLatched = true;
             if (Input.GetKeyDown(frontKey)) isBackLatched = false;
             if (walking) isBackLatched = false;
 
             bool back = isBackLatched && !walking;
 
+            // Menentukan state animasi apa yang seharusnya diputar
+            if (walking)
+            {
+                ChangeAnimationState(WalkHash);
+            }
+            else if (back)
+            {
+                ChangeAnimationState(BackHash);
+            }
+            else
+            {
+                ChangeAnimationState(IdleHash);
+            }
+        }
+
+        /// <summary>
+        /// Mengganti animasi menggunakan CrossFade (Poin 2).
+        /// Hanya dieksekusi jika state baru berbeda dari state saat ini.
+        /// </summary>
+        private void ChangeAnimationState(int newStateHash)
+        {
+            if (currentStateHash == newStateHash) return;
+
             if (animator != null)
             {
-                animator.SetBool(IsWalkingHash, walking);
-                animator.SetBool(IsBackHash, back);
+                animator.CrossFade(newStateHash, crossFadeDuration, 0);
             }
+            
+            currentStateHash = newStateHash;
         }
     }
 }

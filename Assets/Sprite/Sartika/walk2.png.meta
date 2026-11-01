@@ -1,10 +1,13 @@
 fileFormatVersion: 2
-guid: 30840d553a620594e978ebc70a62a898
+guid: 8753731e2e2ff1e4d97fd839d2ccb4ae
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -1941606416821251386
-    second: Sartika_walk6_0
+      213: 9104348463550422359
+    second: walk2_0
+  - first:
+      213: -771015959597477621
+    second: walk2_1
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -122,17 +125,30 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Sartika_walk6_0
+      name: walk2_0
       rect:
         serializedVersion: 2
-        x: 414
-        y: 131
-        width: 287
-        height: 854
+        x: 373
+        y: 132
+        width: 336
+        height: 853
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +157,30 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 6c210cf30470e05e0800000000000000
-      internalID: -1941606416821251386
+      spriteID: 75ddb41d0b4295e70800000000000000
+      internalID: 9104348463550422359
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: walk2_1
+      rect:
+        serializedVersion: 2
+        x: 590
+        y: 133
+        width: 6
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b01190cd11dcc45f0800000000000000
+      internalID: -771015959597477621
       vertices: []
       indices: 
       edges: []
@@ -161,7 +199,8 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Sartika_walk6_0: -1941606416821251386
+      walk2_0: 9104348463550422359
+      walk2_1: -771015959597477621
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

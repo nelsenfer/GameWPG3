@@ -12,6 +12,20 @@ namespace Game.Dialogue.UI
     /// </summary>
     public class ComicBubblePresenter : MonoBehaviour
     {
+        /// <summary>Satu jenis ekor: gambar + cara menempelkannya ke bubble.</summary>
+        [System.Serializable]
+        private class TailVariant
+        {
+            [Tooltip("Kosong = pakai gambar bawaan objek Tail.")]
+            public Sprite sprite;
+            [Tooltip("Titik pada gambar ekor yang ditempelkan ke sudut/tepi bubble (0-1). Kiri: (1,1), kanan: (0,1), tengah: (0.5,1).")]
+            public Vector2 pivot = new Vector2(0.5f, 1f);
+            [Tooltip("Geser dari titik tempel (satuan UI). Dipakai untuk menyetel posisi per gambar.")]
+            public Vector2 offset;
+            [Tooltip("Ukuran ekor. (0,0) = pakai ukuran bawaan objek Tail.")]
+            public Vector2 size;
+        }
+
         [Header("Bubble (satu, dipasang tetap di Canvas)")]
         [Tooltip("RectTransform root bubble (badan). Pivot sebaiknya (0.5, 0) = tengah-bawah.")]
         [SerializeField] private RectTransform bubbleRect;
@@ -26,6 +40,17 @@ namespace Game.Dialogue.UI
         [SerializeField] private float tailEdgeMargin = 40f;
         [Tooltip("Ekor di sudut bubble: bubble melebar menjauh dari pembicara.")]
         [SerializeField] private bool tailAtCorner = true;
+
+        [Header("Jenis ekor (pembicara di bawah bubble)")]
+        [Tooltip("Pembicara tepat di bawah bubble: segitiga di tengah, mengikuti posisi pembicara.")]
+        [SerializeField] private TailVariant tailCenter = new TailVariant();
+        [Tooltip("Pembicara di kiri bawah: ekor menempel di sudut kiri-bawah bubble.")]
+        [SerializeField] private TailVariant tailCornerLeft = new TailVariant { pivot = new Vector2(1f, 1f) };
+        [Tooltip("Pembicara di kanan bawah: ekor menempel di sudut kanan-bawah bubble.")]
+        [SerializeField] private TailVariant tailCornerRight = new TailVariant { pivot = new Vector2(0f, 1f) };
+        [Tooltip("HANYA memilih gambar: pembicara di dalam zona ini memakai ekor tengah, di luarnya ekor sudut. Tidak memengaruhi jarak ekor.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float centerZone = 0.3f;
 
         [Header("Posisi")]
         [Tooltip("Kosong = Camera.main.")]
@@ -51,9 +76,17 @@ namespace Game.Dialogue.UI
         private bool isChoiceActive;
         private SpeakerAnchor currentAnchor;
 
+        private Sprite defaultTailSprite;
+        private Vector2 defaultTailPivot;
+        private Vector2 defaultTailSize;
+
         private void Awake()
         {
             if (tailRect == null) return;
+
+            defaultTailSprite = tailImage != null ? tailImage.sprite : null;
+            defaultTailPivot = tailRect.pivot;
+            defaultTailSize = tailRect.sizeDelta;
 
             LayoutElement layoutElement = tailRect.GetComponent<LayoutElement>();
             if (layoutElement == null) layoutElement = tailRect.gameObject.AddComponent<LayoutElement>();
@@ -185,28 +218,73 @@ namespace Game.Dialogue.UI
             Rect rect = bubbleRect.rect;
             float dxOut = Mathf.Max(rect.xMin - target.x, 0f, target.x - rect.xMax);
             float dyOut = Mathf.Max(rect.yMin - target.y, 0f, target.y - rect.yMax);
-            Vector3 position;
+
+            TailVariant variant = tailCenter;
+            Vector2 position;
             float rotation;
 
             if (dyOut >= dxOut)
             {
-                float x = Mathf.Clamp(target.x, rect.xMin + tailEdgeMargin,
-                    Mathf.Max(rect.xMin + tailEdgeMargin, rect.xMax - tailEdgeMargin));
-                bool below = target.y < rect.center.y;
-                position = new Vector3(x, below ? rect.yMin : rect.yMax, 0f);
-                rotation = below ? 0f : 180f;
+                if (target.y < rect.center.y)
+                {
+                    // Pembicara di bawah: pilih jenis ekor menurut posisi horizontalnya.
+                    variant = PickBelowVariant(target.x, rect, out position);
+                    rotation = 0f;
+                }
+                else
+                {
+                    position = new Vector2(ClampAlongX(target.x, rect), rect.yMax);
+                    rotation = 180f;
+                }
             }
             else
             {
                 float y = Mathf.Clamp(target.y, rect.yMin + tailEdgeMargin,
                     Mathf.Max(rect.yMin + tailEdgeMargin, rect.yMax - tailEdgeMargin));
                 bool left = target.x < rect.center.x;
-                position = new Vector3(left ? rect.xMin : rect.xMax, y, 0f);
+                position = new Vector2(left ? rect.xMin : rect.xMax, y);
                 rotation = left ? -90f : 90f;
             }
 
-            tailRect.localPosition = position;
+            ApplyVariant(variant);
+
+            // Offset hanya dipakai untuk ekor tegak (tanpa putaran).
+            Vector2 extra = Mathf.Approximately(rotation, 0f) ? variant.offset : Vector2.zero;
+            tailRect.localPosition = new Vector3(position.x + extra.x, position.y + extra.y, 0f);
             tailRect.localRotation = Quaternion.Euler(0f, 0f, rotation);
+        }
+
+        private TailVariant PickBelowVariant(float targetX, Rect rect, out Vector2 position)
+        {
+            float half = Mathf.Max(1f, rect.width * 0.5f);
+            float ratio = (targetX - rect.center.x) / half; // -1 = kiri, 0 = tengah, 1 = kanan
+
+            bool left = ratio < 0f;
+            TailVariant corner = left ? tailCornerLeft : tailCornerRight;
+
+            if (Mathf.Abs(ratio) <= centerZone || corner.sprite == null)
+            {
+                position = new Vector2(ClampAlongX(targetX, rect), rect.yMin);
+                return tailCenter;
+            }
+
+            position = new Vector2(left ? rect.xMin : rect.xMax, rect.yMin);
+            return corner;
+        }
+
+        private float ClampAlongX(float x, Rect rect)
+        {
+            float min = rect.xMin + tailEdgeMargin;
+            return Mathf.Clamp(x, min, Mathf.Max(min, rect.xMax - tailEdgeMargin));
+        }
+
+        private void ApplyVariant(TailVariant variant)
+        {
+            bool custom = variant.sprite != null;
+
+            if (tailImage != null) tailImage.sprite = custom ? variant.sprite : defaultTailSprite;
+            tailRect.pivot = custom ? variant.pivot : defaultTailPivot;
+            tailRect.sizeDelta = custom && variant.size != Vector2.zero ? variant.size : defaultTailSize;
         }
 
         private void SetVisible(bool show)

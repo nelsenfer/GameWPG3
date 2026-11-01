@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: dd7eae7ab2ef82947bca012c903d99be
+guid: c21e653ea9affa04780ee7ca12166184
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 8455912948797434290
-    second: Sartika_walk4_0
+      213: -1120835024187959960
+    second: bublechat_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -122,27 +122,40 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Sartika_walk4_0
+      name: bublechat_0
       rect:
         serializedVersion: 2
-        x: 414
-        y: 131
-        width: 223
-        height: 854
+        x: 0
+        y: 0
+        width: 540
+        height: 540
       alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 50, y: 50, z: 50, w: 50}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 2b962bc8600795570800000000000000
-      internalID: 8455912948797434290
+      spriteID: 865d573eb7ef170f0800000000000000
+      internalID: -1120835024187959960
       vertices: []
       indices: 
       edges: []
@@ -151,7 +164,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: fbdfd9d146b530842a8d95e22c16df08
     internalID: 0
     vertices: []
     indices: 
@@ -161,7 +174,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Sartika_walk4_0: 8455912948797434290
+      bublechat_0: -1120835024187959960
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

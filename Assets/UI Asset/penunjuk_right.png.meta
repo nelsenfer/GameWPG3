@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 4cd21d781631fe64f9725f4b45f87014
+guid: c7349ad1de75e6b49ba49455d37f0b03
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -6496063633523949064
-    second: Sartika_walk3_0
+      213: -667256785248947264
+    second: penunjuk_right_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -122,17 +122,30 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Sartika_walk3_0
+      name: penunjuk_right_0
       rect:
         serializedVersion: 2
-        x: 414
-        y: 131
-        width: 287
-        height: 854
+        x: 0
+        y: 0
+        width: 120
+        height: 89
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +154,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 8f1c87dfa8859d5a0800000000000000
-      internalID: -6496063633523949064
+      spriteID: 0c374453d7d6db6f0800000000000000
+      internalID: -667256785248947264
       vertices: []
       indices: 
       edges: []
@@ -161,7 +174,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Sartika_walk3_0: -6496063633523949064
+      penunjuk_right_0: -667256785248947264
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
