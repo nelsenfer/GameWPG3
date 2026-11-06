@@ -5,7 +5,7 @@ namespace Game.Core
     /// <summary>
     /// Kamera side-scrolling dengan dead zone: kamera diam selama player masih
     /// di dalam kotak tengah layar, dan baru ikut bergerak saat player menyentuh
-    /// tepi kotak itu. Opsional: dibatasi oleh batas kiri/kanan level.
+    /// tepi kotak itu. Opsional: dibatasi oleh batas kiri/kanan level atau SpriteRenderer background.
     ///
     /// Taruh di Main Camera. Kamera harus Orthographic.
     /// </summary>
@@ -26,10 +26,12 @@ namespace Game.Core
         [SerializeField] private bool followY = false;
         [SerializeField] private float yOffset = 0f;
 
-        [Header("Batas Level (opsional)")]
-        [SerializeField] private bool useBounds = false;
-        [SerializeField] private float minX = -10f;
-        [SerializeField] private float maxX = 10f;
+        [Header("Batas Level (Map / Background)")]
+        [SerializeField] private bool useBounds = true;
+        [Tooltip("Jika diisi, batas kiri & kanan kamera otomatis mengikuti lebar SpriteRenderer background ini.")]
+        [SerializeField] private SpriteRenderer backgroundRenderer;
+        [SerializeField] private float minX = -33.89f;
+        [SerializeField] private float maxX = 8.89f;
 
         private Camera cam;
         private float velocityX;
@@ -38,6 +40,7 @@ namespace Game.Core
         private void Awake()
         {
             cam = GetComponent<Camera>();
+            AutoFindBackground();
         }
 
         private void Start()
@@ -47,6 +50,72 @@ namespace Game.Core
                 var player = FindFirstObjectByType<PlayerController>();
                 if (player != null) target = player.transform;
             }
+
+            AutoFindBackground();
+            SnapToTarget();
+        }
+
+        private void AutoFindBackground()
+        {
+            if (backgroundRenderer != null) return;
+            GameObject bgObj = GameObject.Find("background");
+            if (bgObj != null)
+                backgroundRenderer = bgObj.GetComponent<SpriteRenderer>();
+        }
+
+        private void GetXBounds(out float boundMinX, out float boundMaxX)
+        {
+            if (backgroundRenderer != null && backgroundRenderer.sprite != null)
+            {
+                Bounds b = backgroundRenderer.bounds;
+                boundMinX = b.min.x;
+                boundMaxX = b.max.x;
+                return;
+            }
+
+            boundMinX = minX;
+            boundMaxX = maxX;
+        }
+
+        private float ClampXToBounds(float x, out bool clamped)
+        {
+            clamped = false;
+            if (!useBounds || cam == null) return x;
+
+            GetXBounds(out float boundMinX, out float boundMaxX);
+            float halfWidth = cam.orthographicSize * cam.aspect;
+            float lo = boundMinX + halfWidth;
+            float hi = boundMaxX - halfWidth;
+
+            if (lo > hi)
+            {
+                clamped = true;
+                return (boundMinX + boundMaxX) * 0.5f;
+            }
+
+            if (x < lo)
+            {
+                clamped = true;
+                return lo;
+            }
+            if (x > hi)
+            {
+                clamped = true;
+                return hi;
+            }
+            return x;
+        }
+
+        private float ClampYToBounds(float y)
+        {
+            if (!useBounds || cam == null || backgroundRenderer == null || backgroundRenderer.sprite == null)
+                return y;
+
+            Bounds b = backgroundRenderer.bounds;
+            float halfHeight = cam.orthographicSize;
+            float lo = b.min.y + halfHeight;
+            float hi = b.max.y - halfHeight;
+            return lo > hi ? b.center.y : Mathf.Clamp(y, lo, hi);
         }
 
         private void LateUpdate()
@@ -65,15 +134,18 @@ namespace Game.Core
 
             if (useBounds)
             {
-                float halfWidth = cam.orthographicSize * cam.aspect;
-                float lo = minX + halfWidth;
-                float hi = maxX - halfWidth;
-                desiredX = lo > hi ? (minX + maxX) * 0.5f : Mathf.Clamp(desiredX, lo, hi);
+                desiredX = ClampXToBounds(desiredX, out _);
             }
 
             pos.x = smoothTime > 0f
                 ? Mathf.SmoothDamp(pos.x, desiredX, ref velocityX, smoothTime)
                 : desiredX;
+
+            if (useBounds)
+            {
+                pos.x = ClampXToBounds(pos.x, out bool hitBound);
+                if (hitBound) velocityX = 0f;
+            }
 
             if (followY)
             {
@@ -81,6 +153,11 @@ namespace Game.Core
                 pos.y = smoothTime > 0f
                     ? Mathf.SmoothDamp(pos.y, desiredY, ref velocityY, smoothTime)
                     : desiredY;
+            }
+
+            if (useBounds)
+            {
+                pos.y = ClampYToBounds(pos.y);
             }
 
             transform.position = pos;
@@ -93,6 +170,13 @@ namespace Game.Core
             Vector3 pos = transform.position;
             pos.x = target.position.x;
             if (followY) pos.y = target.position.y + yOffset;
+
+            if (useBounds)
+            {
+                pos.x = ClampXToBounds(pos.x, out _);
+                pos.y = ClampYToBounds(pos.y);
+            }
+
             transform.position = pos;
             velocityX = velocityY = 0f;
         }
@@ -108,9 +192,10 @@ namespace Game.Core
 
             if (useBounds)
             {
+                GetXBounds(out float boundMinX, out float boundMaxX);
                 Gizmos.color = Color.red;
-                Gizmos.DrawLine(new Vector3(minX, center.y - h, 0f), new Vector3(minX, center.y + h, 0f));
-                Gizmos.DrawLine(new Vector3(maxX, center.y - h, 0f), new Vector3(maxX, center.y + h, 0f));
+                Gizmos.DrawLine(new Vector3(boundMinX, center.y - h, 0f), new Vector3(boundMinX, center.y + h, 0f));
+                Gizmos.DrawLine(new Vector3(boundMaxX, center.y - h, 0f), new Vector3(boundMaxX, center.y + h, 0f));
             }
         }
     }

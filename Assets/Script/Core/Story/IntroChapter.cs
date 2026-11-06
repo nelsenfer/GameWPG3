@@ -1,6 +1,8 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Rendering.Universal;
 using Ink.UnityIntegration;
 using Game.Core;
 
@@ -19,8 +21,8 @@ namespace Game.Progression
     ///  4. Ambil kopi di dapur
     ///  (opsional) lampu berkedip saat masuk Zona Lampu
     ///  5. Kembali ke meja -> tampil meja berantakan (close-up)
-    ///  6. Ambil lonceng -> kembali ke side-scroll
-    ///  (opsional) 7. Cutscene hantu -> pindah dimensi (aktifkan Include Cutscene)
+    ///  6. Ambil lonceng -> kembali ke side-scroll -> lampu kantor berkedip & hantu muncul di kiri layar
+    ///  (opsional) 7. Cutscene dialog kaget / pindah dimensi (aktifkan Include Cutscene)
     /// </summary>
     public class IntroChapter : MonoBehaviour
     {
@@ -39,6 +41,16 @@ namespace Game.Progression
         [Tooltip("Pemain ditahan (tidak bisa jalan) selama panel meja terbuka.")]
         [SerializeField] private PlayerController player;
         [SerializeField] private MinigameLauncher minigameKomputer;
+
+        [Header("Cahaya & Hantu (Setelah Ambil Lonceng)")]
+        [Tooltip("Global Light 2D kantor yang akan berkedip setelah lonceng diambil.")]
+        [SerializeField] private Light2D lampuKantor;
+        [Tooltip("Objek hantu yang tiba-tiba muncul di sebelah kiri layar di sela kedipan lampu.")]
+        [SerializeField] private GameObject hantu;
+        [Tooltip("Jarak kemunculan hantu dari tepi kiri layar kamera (satuan world).")]
+        [SerializeField] private float jarakHantuDariKiriLayar = 3.5f;
+        [Tooltip("Posisi Y hantu saat muncul di lantai kantor.")]
+        [SerializeField] private float posisiYHantu = -2.54f;
 
         [Header("Dialog (Ink)")]
         [SerializeField] private InkFile prologChat;
@@ -69,8 +81,29 @@ namespace Game.Progression
         [Tooltip("Tambahkan cutscene hantu + pindah dimensi di akhir. Matikan kalau target masih sampai lonceng.")]
         [SerializeField] private bool includeCutscene = false;
 
+        private Coroutine flickerRoutine;
+
         private void Awake()
         {
+            if (lampuKantor == null)
+            {
+                GameObject lightObj = GameObject.Find("Global Light 2D");
+                if (lightObj != null) lampuKantor = lightObj.GetComponent<Light2D>();
+                if (lampuKantor == null) lampuKantor = FindFirstObjectByType<Light2D>();
+            }
+
+            if (hantu == null)
+            {
+                hantu = GameObject.Find("Hantu_HyperResponsibility");
+                if (hantu == null) hantu = GameObject.Find("Hantu_MasaKecil");
+            }
+
+            // Sembunyikan hantu di awal permainan sampai momen lonceng diambil
+            if (hantu != null)
+            {
+                hantu.SetActive(false);
+            }
+
             var beats = new List<StoryBeat>();
 
             // 0. Chat HP dari bos dan keluarga
@@ -158,7 +191,7 @@ namespace Game.Progression
             lihatMeja.onFinished.AddListener(() => { if (player != null) player.SetFrozen(true); });
             beats.Add(lihatMeja);
 
-            // 6. Klik lonceng di panel, panel ditutup, kembali ke side-scroll
+            // 6. Klik lonceng di panel, panel ditutup, kembali ke side-scroll -> lampu berkedip & hantu muncul
             var ambilLonceng = new StoryBeat
             {
                 beatName = "Ambil lonceng",
@@ -171,8 +204,10 @@ namespace Game.Progression
             ambilLonceng.onFinished.AddListener(() =>
             {
                 if (mejaPanel != null) mejaPanel.SetActive(false);
-                if (player != null) player.SetFrozen(false);
                 onTutupMeja.Invoke();
+
+                if (flickerRoutine != null) StopCoroutine(flickerRoutine);
+                flickerRoutine = StartCoroutine(KedipLampuDanMunculkanHantuRoutine());
             });
             beats.Add(ambilLonceng);
 
@@ -194,6 +229,94 @@ namespace Game.Progression
 
             if (director != null) director.LoadBeats(beats);
             else Debug.LogError("[IntroChapter] Director belum di-assign.", this);
+        }
+
+        private IEnumerator KedipLampuDanMunculkanHantuRoutine()
+        {
+            if (player != null) player.SetFrozen(true);
+
+            // Jeda singkat setelah keluar dari panel meja ke mode side-scrolling
+            yield return new WaitForSeconds(0.35f);
+
+            onLampuKedip?.Invoke();
+
+            float baseIntensity = lampuKantor != null ? lampuKantor.intensity : 1f;
+
+            // Kedipan lampu kantor tahap 1 (sebelum hantu muncul)
+            SetLightIntensity(0.12f);
+            yield return new WaitForSeconds(0.08f);
+            SetLightIntensity(baseIntensity);
+            yield return new WaitForSeconds(0.14f);
+
+            SetLightIntensity(0.04f);
+            yield return new WaitForSeconds(0.10f);
+            SetLightIntensity(baseIntensity * 0.85f);
+            yield return new WaitForSeconds(0.07f);
+
+            SetLightIntensity(0.15f);
+            yield return new WaitForSeconds(0.06f);
+            SetLightIntensity(baseIntensity);
+            yield return new WaitForSeconds(0.18f);
+
+            // Lampu padam sejenak di antara kedipan -> objek hantu muncul di sebelah kiri layar
+            SetLightIntensity(0.0f);
+            yield return new WaitForSeconds(0.14f);
+
+            MunculkanHantuDiKiriLayar();
+            onHantuMuncul?.Invoke();
+
+            yield return new WaitForSeconds(0.10f);
+
+            // Kedipan lampu tahap 2 (memperlihatkan hantu yang baru muncul)
+            SetLightIntensity(baseIntensity * 0.9f);
+            yield return new WaitForSeconds(0.12f);
+
+            SetLightIntensity(0.06f);
+            yield return new WaitForSeconds(0.09f);
+
+            SetLightIntensity(baseIntensity * 0.75f);
+            yield return new WaitForSeconds(0.08f);
+
+            SetLightIntensity(0.15f);
+            yield return new WaitForSeconds(0.07f);
+
+            // Kembalikan cahaya normal
+            SetLightIntensity(baseIntensity);
+
+            if (player != null) player.SetFrozen(false);
+            flickerRoutine = null;
+        }
+
+        private void SetLightIntensity(float intensity)
+        {
+            if (lampuKantor != null)
+            {
+                lampuKantor.intensity = intensity;
+            }
+        }
+
+        private void MunculkanHantuDiKiriLayar()
+        {
+            if (hantu == null) return;
+
+            Camera cam = Camera.main;
+            if (cam != null)
+            {
+                float halfWidth = cam.orthographicSize * cam.aspect;
+                float leftScreenX = cam.transform.position.x - halfWidth + jarakHantuDariKiriLayar;
+                Vector3 pos = hantu.transform.position;
+                pos.x = leftScreenX;
+                pos.y = posisiYHantu;
+                hantu.transform.position = pos;
+            }
+
+            SpriteRenderer sr = hantu.GetComponent<SpriteRenderer>();
+            if (sr != null && sr.sortingOrder <= 0)
+            {
+                sr.sortingOrder = 5;
+            }
+
+            hantu.SetActive(true);
         }
 
         // Meja ditekan sebelum waktunya: "kopi dulu".

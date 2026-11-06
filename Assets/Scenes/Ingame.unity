@@ -2207,12 +2207,12 @@ GameObject:
   - component: {fileID: 182720072}
   - component: {fileID: 182720071}
   m_Layer: 6
-  m_Name: Hantu_MasaKecil
+  m_Name: Hantu_HyperResponsibility
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &182720070
 Transform:
   m_ObjectHideFlags: 0
@@ -2222,9 +2222,9 @@ Transform:
   m_GameObject: {fileID: 182720069}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 12.65, y: -0.69, z: -0.026095213}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: -5.5, y: -2.327294, z: -0.026095213}
+  m_LocalScale: {x: 0.55, y: 0.55, z: 1}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 843928423}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -2235,7 +2235,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 182720069}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0f44c44b8a8d9174f991c7fc355e4abf, type: 3}
   m_Name: 
@@ -2332,13 +2332,13 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
+  m_SortingOrder: 5
+  m_Sprite: {fileID: -8038874479870386421, guid: a92f0d4bd9ba93542ae2e6480444968a, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 10.24, y: 7.68}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -4405,9 +4405,10 @@ MonoBehaviour:
   smoothTime: 0.15
   followY: 0
   yOffset: 0
-  useBounds: 0
-  minX: -10
-  maxX: 10
+  useBounds: 1
+  backgroundRenderer: {fileID: 1285685674}
+  minX: -33.89
+  maxX: 8.89
 --- !u!1 &531636945
 GameObject:
   m_ObjectHideFlags: 0
@@ -10382,6 +10383,10 @@ MonoBehaviour:
   lonceng: {fileID: 709928015}
   player: {fileID: 130988648}
   minigameKomputer: {fileID: 570459693}
+  lampuKantor: {fileID: 619394801}
+  hantu: {fileID: 182720069}
+  jarakHantuDariKiriLayar: 3.5
+  posisiYHantu: -2.54
   prologChat: {fileID: 6231892579173505729, guid: b1e7c4a92d5f4380af6c8e3179b204de, type: 3}
   tutorialInk: {fileID: 6231892579173505729, guid: fa8de6e58cb6ce44ab5cde139c9ff661, type: 3}
   komputerInk: {fileID: 0}
