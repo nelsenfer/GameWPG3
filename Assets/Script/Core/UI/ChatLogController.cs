@@ -31,9 +31,17 @@ namespace Game.Dialogue.UI
 
         [Header("Behaviour")]
         [Tooltip("Kalau dicentang, log dikosongkan tiap dialog selesai (percakapan terpisah per hantu).")]
-        [SerializeField] private bool clearLogOnDialogueEnd = true;
+        [SerializeField] private bool clearLogOnDialogueEnd = false;
 
         private readonly StringBuilder builder = new StringBuilder();
+
+        private void Awake()
+        {
+            if (logText != null && builder.Length == 0)
+            {
+                logText.text = string.Empty;
+            }
+        }
 
         private void OnEnable()
         {
@@ -49,11 +57,22 @@ namespace Game.Dialogue.UI
 
         private void HandleLine(DialogueLinePayload payload)
         {
+            // History percakapan hanya menampilkan dialog karakter & narasi (chat HP diabaikan)
+            if (payload.style == DialogueStyle.Phone)
+                return;
+
             if (logText != null)
             {
-                string name = payload.speaker != null ? payload.speaker.displayName : "";
+                bool isNarration = payload.style == DialogueStyle.Narration || payload.speaker == null;
+                string name = (!isNarration && payload.speaker != null) ? payload.speaker.displayName : string.Empty;
+
                 if (builder.Length > 0) builder.Append("\n\n");
-                builder.Append(string.IsNullOrEmpty(name) ? payload.text : "<b>" + name + "</b>\n" + payload.text);
+
+                if (string.IsNullOrEmpty(name))
+                    builder.Append("<i><color=#E0E0E0>").Append(payload.text).Append("</color></i>");
+                else
+                    builder.Append("<b><color=#FFD97D>").Append(name).Append("</color></b>\n").Append(payload.text);
+
                 logText.text = builder.ToString();
             }
             else if (bubblePrefab != null && contentParent != null)

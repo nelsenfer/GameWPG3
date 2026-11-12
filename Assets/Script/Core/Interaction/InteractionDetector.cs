@@ -69,13 +69,19 @@ namespace Game.Core
                 var col = overlapBuffer[i];
                 if (col == null) continue;
 
-                if (col.TryGetComponent<IInteractable>(out var interactable) && interactable.CanInteract())
+                var interactables = col.GetComponents<IInteractable>();
+                for (int j = 0; j < interactables.Length; j++)
                 {
-                    float dist = (col.transform.position - transform.position).sqrMagnitude;
-                    if (dist < nearestDist)
+                    var interactable = interactables[j];
+                    if (interactable != null && interactable.CanInteract())
                     {
-                        nearestDist = dist;
-                        nearest = interactable;
+                        float dist = (col.transform.position - transform.position).sqrMagnitude;
+                        if (dist < nearestDist)
+                        {
+                            nearestDist = dist;
+                            nearest = interactable;
+                        }
+                        break;
                     }
                 }
             }

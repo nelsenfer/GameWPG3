@@ -52,6 +52,14 @@ namespace Game.Progression
         [Tooltip("Posisi Y hantu saat muncul di lantai kantor.")]
         [SerializeField] private float posisiYHantu = -2.54f;
 
+        [Header("Dunia Lain & Minigame Kotak (Space Dive)")]
+        [Tooltip("Pemicu interaksi [E] Bunyikan lonceng yang muncul di posisi MC setelah dialog kaget selesai.")]
+        [SerializeField] private GameObject pemicuLonceng;
+        [Tooltip("Transisi Space Dive menuju Dunia Lain.")]
+        [SerializeField] private SpaceDiveTransition transisiSpaceDive;
+        [Tooltip("Minigame menyusun 4 kotak (A - D) di Dunia Lain.")]
+        [SerializeField] private BoxSortingMinigame minigameKotak;
+
         [Header("Dialog (Ink)")]
         [SerializeField] private InkFile prologChat;
         [Tooltip("Narasi tutorial (gerak, interaksi). Pakai #narasi di tiap baris.")]
@@ -66,6 +74,10 @@ namespace Game.Progression
         [SerializeField] private InkFile mejaInk;
         [SerializeField] private InkFile loncengInk;
         [SerializeField] private InkFile kagetInk;
+        [Tooltip("Dialog bersama Hantu Hyper-Responsibility saat tiba di Dunia Lain.")]
+        [SerializeField] private InkFile duniaLainInk;
+        [Tooltip("Dialog penutup setelah ke-4 kotak berhasil disusun.")]
+        [SerializeField] private InkFile selesaiKotakInk;
 
         [Header("Efek (sambungkan nanti)")]
         [SerializeField] private UnityEvent onLampuKedip;
@@ -103,6 +115,28 @@ namespace Game.Progression
             {
                 hantu.SetActive(false);
             }
+
+            if (pemicuLonceng == null)
+            {
+                pemicuLonceng = GameObject.Find("Pemicu_BunyikanLonceng");
+                if (pemicuLonceng == null)
+                {
+                    pemicuLonceng = new GameObject("Pemicu_BunyikanLonceng");
+                    pemicuLonceng.layer = 6; // Interactable
+                    CircleCollider2D col = pemicuLonceng.AddComponent<CircleCollider2D>();
+                    col.isTrigger = true;
+                    col.radius = 1.15f;
+                }
+            }
+            pemicuLonceng.SetActive(false);
+
+            if (transisiSpaceDive == null)
+                transisiSpaceDive = FindFirstObjectByType<SpaceDiveTransition>(FindObjectsInactive.Include);
+
+            if (minigameKotak == null)
+                minigameKotak = FindFirstObjectByType<BoxSortingMinigame>(FindObjectsInactive.Include);
+            if (minigameKotak != null)
+                minigameKotak.gameObject.SetActive(false);
 
             var beats = new List<StoryBeat>();
 
@@ -211,21 +245,44 @@ namespace Game.Progression
             });
             beats.Add(ambilLonceng);
 
-            // 7. (opsional) Cutscene hantu, lonceng bunyi, pindah dimensi
-            if (includeCutscene)
+            // 7. Interaksi [E] Bunyikan lonceng di posisi MC -> Transisi Space Dive ke Dunia Lain
+            var bunyikanLonceng = new StoryBeat
             {
-                var cutscene = new StoryBeat
-                {
-                    beatName = "Cutscene hantu",
-                    trigger = BeatTrigger.Auto,
-                    clearObjective = true,
-                    dialogue = kagetInk
-                };
-                cutscene.onTriggered.AddListener(onHantuMuncul.Invoke);
-                cutscene.onFinished.AddListener(onLoncengBunyi.Invoke);
-                cutscene.onFinished.AddListener(onPindahDimensi.Invoke);
-                beats.Add(cutscene);
-            }
+                beatName = "Bunyikan lonceng",
+                trigger = BeatTrigger.Interact,
+                target = pemicuLonceng,
+                prompt = "[E] Bunyikan lonceng",
+                minigame = transisiSpaceDive,
+                hideTargetAfter = true
+            };
+            bunyikanLonceng.onTriggered.AddListener(() =>
+            {
+                if (pemicuLonceng != null) pemicuLonceng.SetActive(false);
+                onLoncengBunyi?.Invoke();
+                onPindahDimensi?.Invoke();
+            });
+            beats.Add(bunyikanLonceng);
+
+            // 8. Dialog Hantu Hyper-Responsibility di Dunia Lain -> Minigame menyusun 4 kotak (A - D)
+            var duniaLainBeat = new StoryBeat
+            {
+                beatName = "Dunia Lain & Minigame Kotak",
+                trigger = BeatTrigger.Auto,
+                objective = "Susun ke-4 kotak beban (A - D) ke tempat yang tepat",
+                dialogue = duniaLainInk,
+                minigame = minigameKotak
+            };
+            beats.Add(duniaLainBeat);
+
+            // 9. Dialog penutup setelah ke-4 kotak berhasil disusun
+            var selesaiKotakBeat = new StoryBeat
+            {
+                beatName = "Selesai Minigame Kotak",
+                trigger = BeatTrigger.Auto,
+                clearObjective = true,
+                dialogue = selesaiKotakInk
+            };
+            beats.Add(selesaiKotakBeat);
 
             if (director != null) director.LoadBeats(beats);
             else Debug.LogError("[IntroChapter] Director belum di-assign.", this);
@@ -283,8 +340,47 @@ namespace Game.Progression
             // Kembalikan cahaya normal
             SetLightIntensity(baseIntensity);
 
+            // Putar dialog kaget setelah hantu muncul, lalu munculkan prompt [E] Bunyikan lonceng di posisi MC
+            if (kagetInk != null)
+            {
+                var dm = FindFirstObjectByType<Game.Dialogue.Core.DialogueManager>();
+                if (dm != null)
+                {
+                    dm.StartDialogue(kagetInk, AktifkanPemicuLonceng);
+                    flickerRoutine = null;
+                    yield break;
+                }
+            }
+
             if (player != null) player.SetFrozen(false);
+            AktifkanPemicuLonceng();
             flickerRoutine = null;
+        }
+
+        private void LateUpdate()
+        {
+            if (pemicuLonceng != null && pemicuLonceng.activeSelf && player != null)
+            {
+                pemicuLonceng.transform.position = player.transform.position;
+            }
+        }
+
+        private void AktifkanPemicuLonceng()
+        {
+            if (pemicuLonceng == null) return;
+
+            if (player != null)
+            {
+                pemicuLonceng.transform.position = player.transform.position;
+            }
+
+            pemicuLonceng.SetActive(true);
+
+            var progress = FindFirstObjectByType<StoryProgress>();
+            if (progress != null)
+            {
+                progress.SetObjective("Bunyikan lonceng");
+            }
         }
 
         private void SetLightIntensity(float intensity)

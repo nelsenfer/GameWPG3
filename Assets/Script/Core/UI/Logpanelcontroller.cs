@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Game.Dialogue.UI
 {
@@ -23,10 +24,25 @@ namespace Game.Dialogue.UI
         /// <summary>True selama panel log sedang terbuka.</summary>
         public bool IsOpen => logPanelRoot != null && logPanelRoot.activeSelf;
 
+        /// <summary>Frame terakhir saat panel ditutup (agar tombol ESC tidak langsung memicu Pause di frame yang sama).</summary>
+        public int LastClosedFrame { get; private set; } = -1;
+
         private void Awake()
         {
             if (logPanelRoot != null)
                 logPanelRoot.SetActive(false);
+        }
+
+        private void Update()
+        {
+            if (!IsOpen) return;
+
+            bool escPressed = (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+                              || Input.GetKeyDown(KeyCode.Escape);
+            if (escPressed)
+            {
+                CloseLogDialog();
+            }
         }
 
         [ContextMenu("TEST: Open Log Dialog")]
@@ -40,7 +56,11 @@ namespace Game.Dialogue.UI
         [ContextMenu("TEST: Close Log Dialog")]
         public void CloseLogDialog()
         {
-            if (logPanelRoot != null) logPanelRoot.SetActive(false);
+            if (logPanelRoot != null && logPanelRoot.activeSelf)
+            {
+                logPanelRoot.SetActive(false);
+                LastClosedFrame = Time.frameCount;
+            }
         }
 
         /// <summary>Dipakai nanti untuk tombol "Log" yang sama (toggle buka/tutup).</summary>
@@ -48,9 +68,10 @@ namespace Game.Dialogue.UI
         {
             if (logPanelRoot == null) return;
 
-            bool open = !logPanelRoot.activeSelf;
-            logPanelRoot.SetActive(open);
-            if (open) RefreshLayout();
+            if (logPanelRoot.activeSelf)
+                CloseLogDialog();
+            else
+                OpenLogDialog();
         }
 
         // Bubble dibuat saat panel masih nonaktif, jadi layout-nya baru bisa dihitung setelah panel aktif.

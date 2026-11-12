@@ -39,6 +39,7 @@ namespace Game.Dialogue.UI
 
         private bool isChoiceActive = false;
         private bool isDialogueVisible = false;
+        private int shownOnFrame = -1;
 
         private bool Handles(DialogueStyle style)
         {
@@ -69,6 +70,7 @@ namespace Game.Dialogue.UI
         private void Update()
         {
             if (!isDialogueVisible || isChoiceActive) return;
+            if (Time.frameCount <= shownOnFrame) return;
             if (logPanel != null && logPanel.IsOpen) return;
 
             // Klik kiri mouse (bukan di atas tombol UI, misal tombol Log) ATAU Space/Enter → lanjut.
@@ -104,6 +106,7 @@ namespace Game.Dialogue.UI
                 return;
             }
 
+            shownOnFrame = Time.frameCount;
             SetVisible(true);
             bubble?.SetData(payload.speaker, payload.text);
         }

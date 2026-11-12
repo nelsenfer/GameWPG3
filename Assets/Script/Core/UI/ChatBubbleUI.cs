@@ -48,12 +48,16 @@ namespace Game.Dialogue.UI
                 bubbleLayout.preferredWidth = Mathf.Min(wanted, maxBubbleWidth);
             }
 
-            if (portraitImage != null)
+            if (portraitImage != null && portraitImage != bubbleBackground)
                 portraitImage.gameObject.SetActive(speaker != null && speaker.portrait != null);
 
             if (speaker != null)
             {
-                if (nameText != null) nameText.text = speaker.displayName;
+                if (nameText != null)
+                {
+                    nameText.gameObject.SetActive(true);
+                    nameText.text = speaker.displayName;
+                }
 
                 if (portraitImage != null && speaker.portrait != null)
                     portraitImage.sprite = speaker.portrait;
@@ -63,7 +67,11 @@ namespace Game.Dialogue.UI
             }
             else
             {
-                if (nameText != null) nameText.text = string.Empty;
+                if (nameText != null)
+                {
+                    nameText.text = string.Empty;
+                    nameText.gameObject.SetActive(false);
+                }
             }
         }
     }

@@ -17,12 +17,14 @@ public class InGamePauseController : MonoBehaviour
     [SerializeField] private string clickSfxId = "Click";
 
     private bool isPaused = false;
+    private Game.Dialogue.UI.LogPanelController logPanel;
 
     private void Start()
     {
         // Pastikan panel pause dan setting tertutup saat game dimulai
         if (pausePanel != null) pausePanel.SetActive(false);
         if (settingsPanel != null) settingsPanel.SetActive(false);
+        logPanel = FindFirstObjectByType<Game.Dialogue.UI.LogPanelController>();
     }
 
     private void Update()
@@ -30,6 +32,15 @@ public class InGamePauseController : MonoBehaviour
         // Cek jika tombol ESC (Escape) ditekan menggunakan Input System v6
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
+            if (logPanel == null)
+                logPanel = FindFirstObjectByType<Game.Dialogue.UI.LogPanelController>();
+
+            if (logPanel != null && (logPanel.IsOpen || logPanel.LastClosedFrame == Time.frameCount))
+            {
+                if (logPanel.IsOpen) logPanel.CloseLogDialog();
+                return;
+            }
+
             if (settingsPanel != null && settingsPanel.activeSelf)
             {
                 CloseSettingsPanel();

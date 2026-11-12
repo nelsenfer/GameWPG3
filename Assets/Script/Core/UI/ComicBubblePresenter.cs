@@ -74,6 +74,7 @@ namespace Game.Dialogue.UI
 
         private bool visible;
         private bool isChoiceActive;
+        private int shownOnFrame = -1;
         private SpeakerAnchor currentAnchor;
 
         private Sprite defaultTailSprite;
@@ -111,6 +112,7 @@ namespace Game.Dialogue.UI
         private void Update()
         {
             if (!visible || isChoiceActive) return;
+            if (Time.frameCount <= shownOnFrame) return;
             if (logPanel != null && logPanel.IsOpen) return;
 
             bool clicked = Input.GetMouseButtonDown(0) && !ActiveDialogueBoxController.IsPointerOverButton();
@@ -133,6 +135,7 @@ namespace Game.Dialogue.UI
                 return;
             }
 
+            shownOnFrame = Time.frameCount;
             SpeakerAnchor.TryGet(payload.speaker, out currentAnchor);
             SetVisible(true);
             bubble?.SetData(payload.speaker, payload.text);

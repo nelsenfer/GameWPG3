@@ -30,7 +30,7 @@ namespace Game.Dialogue.Core
 
         private bool hasInteracted = false;
 
-        public bool CanInteract() => !(disableAfterInteract && hasInteracted);
+        public bool CanInteract() => isActiveAndEnabled && !(disableAfterInteract && hasInteracted);
         public string GetInteractionPrompt() => interactionPrompt;
 
         public void OnInteract(GameObject interactor)
