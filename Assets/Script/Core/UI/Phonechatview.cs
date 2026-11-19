@@ -151,6 +151,26 @@ namespace Game.Dialogue.UI
         public void SetHoldHint(bool visible)
         {
             if (holdHint != null) holdHint.SetActive(visible);
+            SetPlaceholderText(visible ? "Tahan tombol apa saja untuk mengetik..." : string.Empty);
+        }
+
+        public void SetIncomingTyping(bool isTyping, CharacterData speaker = null)
+        {
+            SetPlaceholderText(isTyping ? "Lawan bicara sedang mengetik..." : string.Empty);
+            if (threadNameText != null && speaker != null && !speaker.isPlayerSide)
+            {
+                threadNameText.text = isTyping
+                    ? $"{speaker.displayName} <size=72%><color=#88D4AB>• mengetik...</color></size>"
+                    : speaker.displayName;
+            }
+        }
+
+        public void SetPlaceholderText(string text)
+        {
+            if (inputField != null && inputField.placeholder is TMP_Text placeholderTmp)
+            {
+                placeholderTmp.text = text;
+            }
         }
 
         public void SetHoldFill(float amount)

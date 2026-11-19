@@ -266,13 +266,28 @@ namespace Game.Typing
             passed = correctCount >= task.RequiredChars && accuracy >= task.minAccuracyPercent;
 
             if (resultPanel != null) resultPanel.SetActive(true);
-            if (resultStatusText != null) resultStatusText.text = passed ? "LULUS" : "BELUM CUKUP";
+            if (resultStatusText != null)
+            {
+                resultStatusText.text = passed ? "LULUS" : "BELUM CUKUP";
+                resultStatusText.color = passed ? correctColor : wrongColor;
+            }
             if (resultWpmText != null) resultWpmText.text = $"{wpm:0} WPM";
             if (resultAccuracyText != null) resultAccuracyText.text = $"Akurasi {accuracy:0}% (min {task.minAccuracyPercent:0}%)";
             if (resultCharsText != null) resultCharsText.text = $"Huruf benar {correctCount} (min {task.RequiredChars})  |  Salah {wrongCount}";
             if (resultMessageText != null) resultMessageText.text = passed ? task.passMessage : task.failMessage;
 
-            if (retryButton != null) retryButton.gameObject.SetActive(!passed);
+            if (retryButton != null)
+            {
+                retryButton.gameObject.SetActive(!passed);
+                RectTransform retryRt = retryButton.GetComponent<RectTransform>();
+                if (retryRt != null) retryRt.anchoredPosition = new Vector2(-140f, -230f);
+            }
+
+            if (closeButton != null)
+            {
+                RectTransform closeRt = closeButton.GetComponent<RectTransform>();
+                if (closeRt != null) closeRt.anchoredPosition = new Vector2(passed ? 0f : 140f, -230f);
+            }
         }
 
         private void ResetRound()
