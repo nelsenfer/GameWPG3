@@ -59,6 +59,8 @@ namespace Game.Progression
         [SerializeField] private SpaceDiveTransition transisiSpaceDive;
         [Tooltip("Minigame menyusun 4 kotak (A - D) di Dunia Lain.")]
         [SerializeField] private BoxSortingMinigame minigameKotak;
+        [Tooltip("Controller untuk fitur keluar-masuk dimensi yang terbuka setelah minigame selesai.")]
+        [SerializeField] private DimensionTravelController controllerLonceng;
 
         [Header("Dialog (Ink)")]
         [SerializeField] private InkFile prologChat;
@@ -132,6 +134,9 @@ namespace Game.Progression
 
             if (transisiSpaceDive == null)
                 transisiSpaceDive = FindFirstObjectByType<SpaceDiveTransition>(FindObjectsInactive.Include);
+
+            if (controllerLonceng == null)
+                controllerLonceng = FindFirstObjectByType<DimensionTravelController>(FindObjectsInactive.Include);
 
             if (minigameKotak == null)
                 minigameKotak = FindFirstObjectByType<BoxSortingMinigame>(FindObjectsInactive.Include);
@@ -282,10 +287,34 @@ namespace Game.Progression
                 clearObjective = true,
                 dialogue = selesaiKotakInk
             };
+            selesaiKotakBeat.onFinished.AddListener(KembaliKeDuniaAsliDanBukaLonceng);
             beats.Add(selesaiKotakBeat);
 
             if (director != null) director.LoadBeats(beats);
             else Debug.LogError("[IntroChapter] Director belum di-assign.", this);
+        }
+
+        private void KembaliKeDuniaAsliDanBukaLonceng()
+        {
+            if (transisiSpaceDive != null)
+            {
+                transisiSpaceDive.EmergeToRealWorld(() =>
+                {
+                    if (hantu != null) hantu.SetActive(false);
+                    if (controllerLonceng != null) controllerLonceng.UnlockBell();
+
+                    var progress = FindFirstObjectByType<StoryProgress>();
+                    if (progress != null)
+                    {
+                        progress.SetObjective("Gunakan [L] Lonceng untuk berpindah dimensi");
+                    }
+                });
+            }
+            else
+            {
+                if (hantu != null) hantu.SetActive(false);
+                if (controllerLonceng != null) controllerLonceng.UnlockBell();
+            }
         }
 
         private IEnumerator KedipLampuDanMunculkanHantuRoutine()

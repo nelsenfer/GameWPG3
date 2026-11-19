@@ -8,7 +8,9 @@ namespace Game.Progression
 {
     /// <summary>
     /// Transisi ala "Space Dive" (A Space for the Unbound) saat lonceng dibunyikan.
-    /// Mengubah pencahayaan dan latar menjadi nuansa Dunia Lain (biru keruh/muram).
+    /// Mendukung transisi dua arah:
+    /// 1. Masuk ke Dunia Lain (Dive) - pencahayaan dan latar berubah jadi biru keruh/muram.
+    /// 2. Kembali ke Dunia Nyata (Emerge) - pencahayaan dan latar kembali ke kantor normal.
     /// </summary>
     public class SpaceDiveTransition : MinigameLauncher
     {
@@ -37,24 +39,35 @@ namespace Game.Progression
         [SerializeField] private string otherWorldBgmId = "";
 
         private bool isRunning;
+        private bool isInOtherWorld;
+        private Color originalLightColor = Color.white;
+        private float originalLightIntensity = 1f;
+        private Color originalBgColor = Color.white;
+
         public override bool IsOpen => isRunning;
+        public bool IsInOtherWorld => isInOtherWorld;
 
         private void Awake()
         {
             if (otherWorldBackdrop != null)
                 otherWorldBackdrop.SetActive(false);
+
+            EnsureReferences();
+
+            if (globalLight != null)
+            {
+                originalLightColor = globalLight.color;
+                originalLightIntensity = globalLight.intensity;
+            }
+
+            if (officeBackground != null)
+            {
+                originalBgColor = officeBackground.color;
+            }
         }
 
-        public override void Launch(Action onSuccess)
+        private void EnsureReferences()
         {
-            if (isRunning) return;
-            StartCoroutine(DiveRoutine(onSuccess));
-        }
-
-        private IEnumerator DiveRoutine(Action onSuccess)
-        {
-            isRunning = true;
-
             if (player == null) player = FindFirstObjectByType<PlayerController>();
             if (globalLight == null)
             {
@@ -67,10 +80,42 @@ namespace Game.Progression
                 GameObject bgObj = GameObject.Find("background");
                 if (bgObj != null) officeBackground = bgObj.GetComponent<SpriteRenderer>();
             }
+            if (otherWorldBackdrop == null)
+            {
+                otherWorldBackdrop = GameObject.Find("Latar_DuniaLain");
+            }
+            if (boxMinigameRoot == null)
+            {
+                GameObject boxObj = GameObject.Find("Minigame_Kotak_DuniaLain");
+                if (boxObj != null) boxMinigameRoot = boxObj;
+            }
+        }
+
+        public override void Launch(Action onSuccess)
+        {
+            DiveToOtherWorld(onSuccess);
+        }
+
+        public void DiveToOtherWorld(Action onSuccess = null)
+        {
+            if (isRunning) return;
+            StartCoroutine(DiveRoutine(onSuccess));
+        }
+
+        public void EmergeToRealWorld(Action onSuccess = null)
+        {
+            if (isRunning) return;
+            StartCoroutine(EmergeRoutine(onSuccess));
+        }
+
+        private IEnumerator DiveRoutine(Action onSuccess)
+        {
+            isRunning = true;
+            EnsureReferences();
 
             if (player != null) player.SetFrozen(true);
 
-            // Hentikan BGM kantor dan bunyikan denting lonceng
+            // Denting lonceng & audio
             if (AudioManager.Instance != null)
             {
                 AudioManager.Instance.StopBGM();
@@ -81,10 +126,10 @@ namespace Game.Progression
             Camera cam = Camera.main;
             float baseOrthoSize = cam != null ? cam.orthographicSize : 5f;
             float targetOrthoSize = Mathf.Max(2f, baseOrthoSize - zoomOrthoDelta);
-            float baseLightIntensity = globalLight != null ? globalLight.intensity : 1f;
-            Color baseLightColor = globalLight != null ? globalLight.color : Color.white;
+            float baseLightIntensity = globalLight != null ? globalLight.intensity : originalLightIntensity;
+            Color baseLightColor = globalLight != null ? globalLight.color : originalLightColor;
 
-            // Tahap 1: Denting lonceng -> kamera bergetar & zoom-in, cahaya berpendar biru-putih
+            // Tahap 1: Kamera bergetar & zoom-in, cahaya berpendar
             float elapsed = 0f;
             while (elapsed < zoomInDuration)
             {
@@ -108,26 +153,18 @@ namespace Game.Progression
                 yield return null;
             }
 
-            // Tahap 2: Glitch / Blackout singkat tepat di puncak Space Dive
-            if (globalLight != null)
-            {
-                globalLight.intensity = 0.02f;
-            }
+            // Tahap 2: Glitch / Blackout singkat di puncak Space Dive
+            if (globalLight != null) globalLight.intensity = 0.02f;
             yield return new WaitForSeconds(blackoutDuration * 0.5f);
 
-            if (globalLight != null)
-            {
-                globalLight.intensity = 1.4f;
-            }
+            if (globalLight != null) globalLight.intensity = 1.4f;
             yield return new WaitForSeconds(0.05f);
 
-            if (globalLight != null)
-            {
-                globalLight.intensity = 0f;
-            }
+            if (globalLight != null) globalLight.intensity = 0f;
 
-            // Ubah dunia menjadi Dunia Lain (biru keruh/muram) saat gelap
+            // Terapkan visual Dunia Lain saat gelap
             ApplyOtherWorldVisuals();
+            isInOtherWorld = true;
 
             yield return new WaitForSeconds(blackoutDuration * 0.5f);
 
@@ -170,7 +207,92 @@ namespace Game.Progression
             onSuccess?.Invoke();
         }
 
-        private void ApplyOtherWorldVisuals()
+        private IEnumerator EmergeRoutine(Action onSuccess)
+        {
+            isRunning = true;
+            EnsureReferences();
+
+            if (player != null) player.SetFrozen(true);
+
+            // Denting lonceng saat kembali
+            if (AudioManager.Instance != null)
+            {
+                if (!string.IsNullOrEmpty(bellSfxId))
+                    AudioManager.Instance.PlaySFX(bellSfxId);
+            }
+
+            Camera cam = Camera.main;
+            float baseOrthoSize = cam != null ? cam.orthographicSize : 5f;
+            float targetOrthoSize = Mathf.Max(2f, baseOrthoSize - zoomOrthoDelta);
+
+            // Tahap 1: Kamera bergetar & zoom-in halus
+            float elapsed = 0f;
+            while (elapsed < zoomInDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / zoomInDuration);
+                float smoothT = t * t;
+
+                if (cam != null)
+                {
+                    cam.orthographicSize = Mathf.Lerp(baseOrthoSize, targetOrthoSize, smoothT);
+                    Vector2 shake = UnityEngine.Random.insideUnitCircle * (shakeMagnitude * (1f - t * 0.5f));
+                    cam.transform.position += new Vector3(shake.x, shake.y, 0f);
+                }
+
+                yield return null;
+            }
+
+            // Tahap 2: Blackout / Glitch singkat
+            if (globalLight != null) globalLight.intensity = 0.02f;
+            yield return new WaitForSeconds(blackoutDuration * 0.5f);
+
+            if (globalLight != null) globalLight.intensity = 1.2f;
+            yield return new WaitForSeconds(0.04f);
+
+            if (globalLight != null) globalLight.intensity = 0f;
+
+            // Kembalikan visual ke kantor normal saat gelap
+            ApplyRealWorldVisuals();
+            isInOtherWorld = false;
+
+            yield return new WaitForSeconds(blackoutDuration * 0.5f);
+
+            // Tahap 3: Layar terang kembali ke kantor + kamera zoom-out
+            elapsed = 0f;
+            while (elapsed < zoomOutDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / zoomOutDuration);
+                float smoothT = 1f - Mathf.Pow(1f - t, 3f);
+
+                if (cam != null)
+                {
+                    cam.orthographicSize = Mathf.Lerp(targetOrthoSize, baseOrthoSize, smoothT);
+                }
+
+                if (globalLight != null)
+                {
+                    globalLight.color = Color.Lerp(otherWorldLightColor, originalLightColor, smoothT);
+                    globalLight.intensity = Mathf.Lerp(0.08f, originalLightIntensity, smoothT);
+                }
+
+                yield return null;
+            }
+
+            if (cam != null) cam.orthographicSize = baseOrthoSize;
+            if (globalLight != null)
+            {
+                globalLight.color = originalLightColor;
+                globalLight.intensity = originalLightIntensity;
+            }
+
+            if (player != null) player.SetFrozen(false);
+            isRunning = false;
+            onSuccess?.Invoke();
+        }
+
+        public void ApplyOtherWorldVisuals()
         {
             if (officeBackground != null)
             {
@@ -187,6 +309,24 @@ namespace Game.Progression
             if (boxMinigameRoot != null)
             {
                 boxMinigameRoot.SetActive(true);
+            }
+        }
+
+        public void ApplyRealWorldVisuals()
+        {
+            if (officeBackground != null)
+            {
+                officeBackground.color = originalBgColor;
+            }
+
+            if (otherWorldBackdrop != null)
+            {
+                otherWorldBackdrop.SetActive(false);
+            }
+
+            if (boxMinigameRoot != null)
+            {
+                boxMinigameRoot.SetActive(false);
             }
         }
     }
