@@ -53,6 +53,7 @@ namespace Game.Progression
             if (fontAsset == null) fontAsset = TMP_Settings.defaultFontAsset;
 
             SetupMinigameObjects();
+            gameObject.SetActive(false);
         }
 
         public void SetupMinigameObjects()

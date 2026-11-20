@@ -133,7 +133,9 @@ namespace Game.Dialogue.UI
 
         private IEnumerator IncomingRoutine(DialogueLinePayload payload)
         {
+            view.SetIncomingTyping(true, payload.speaker);
             yield return new WaitForSecondsRealtime(incomingMessageDelay);
+            view.SetIncomingTyping(false, payload.speaker);
             AddMessage(payload.speaker, payload.text, false);
             Advance(); // otomatis, tanpa input pemain
         }
@@ -191,6 +193,7 @@ namespace Game.Dialogue.UI
             mode = Mode.Choice;
             resume = () => ShowReplyChoices(choices);
             view.SetHoldHint(false);
+            view.SetPlaceholderText("Pilih balasan di bawah...");
 
             if (choiceUI == null)
             {
