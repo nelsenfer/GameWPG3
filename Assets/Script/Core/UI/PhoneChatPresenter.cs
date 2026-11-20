@@ -181,9 +181,9 @@ namespace Game.Dialogue.UI
                 return;
             }
 
-            if (current == null || current.Messages.Count == 0)
-                ShowContactList();
-            // Selain itu tetap di percakapan; pemain menekan Back untuk ke daftar kontak.
+
+            ShowContactList();
+
         }
 
         private void ShowReplyChoices(List<Choice> choices)
