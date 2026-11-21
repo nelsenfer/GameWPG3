@@ -320,7 +320,7 @@ namespace Game.Progression
         private void PlaySfx()
         {
             if (AudioManager.Instance != null)
-                AudioManager.Instance.PlaySFX("Click");
+                AudioManager.Instance.PlaySFX("Pickup", 1f, true);
         }
     }
 }

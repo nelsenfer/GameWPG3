@@ -68,6 +68,8 @@ namespace Game.Dialogue.UI
                         {
                             typing = false;
                             view.SetHoldHint(true); // dilepas = pause
+                            if (AudioManager.Instance != null)
+                                AudioManager.Instance.StopTypingSFX();
                         }
                     }
                 }
@@ -82,6 +84,8 @@ namespace Game.Dialogue.UI
                     {
                         lastCount = count;
                         view.SetInputText(full.Substring(0, SafeLength(full, count)));
+                        if (AudioManager.Instance != null)
+                            AudioManager.Instance.PlayTypingSFX();
                     }
 
                     if (isFirst && firstCharPause > 0f)
@@ -90,6 +94,9 @@ namespace Game.Dialogue.UI
 
                 yield return null;
             }
+
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.StopTypingSFX();
 
             view.SetHoldHint(false);
             view.SetInputText(full);

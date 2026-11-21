@@ -54,6 +54,11 @@ namespace Game.Core
             CurrentState = CurrentState != PlayerMoveState.Frozen
                 ? (Mathf.Abs(currentVelocityX) > 0.05f ? PlayerMoveState.Walking : PlayerMoveState.Idle)
                 : PlayerMoveState.Frozen;
+
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.SetFootstepActive(CurrentState == PlayerMoveState.Walking);
+            }
         }
 
         public void SetFrozen(bool frozen)
@@ -61,6 +66,18 @@ namespace Game.Core
             CurrentState = frozen ? PlayerMoveState.Frozen : PlayerMoveState.Idle;
             currentVelocityX = 0f;
             if (rb != null) rb.linearVelocity = Vector2.zero;
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.SetFootstepActive(false);
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.SetFootstepActive(false);
+            }
         }
 
         public PlayerMovementConfig GetConfig() => config;

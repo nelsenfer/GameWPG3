@@ -224,6 +224,9 @@ namespace Game.Typing
         {
             if (cursor >= currentText.Length) return;
 
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.PlayTypingSFX();
+
             bool ok = c == currentText[cursor];
             results[cursor] = ok;
             if (ok) correctCount++; else wrongCount++;
@@ -245,6 +248,9 @@ namespace Game.Typing
         {
             if (state != State.Running || cursor <= 0) return;
 
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.PlayTypingSFX();
+
             cursor--;
             if (results[cursor]) correctCount--; else wrongCount--;
             results[cursor] = false;
@@ -255,6 +261,8 @@ namespace Game.Typing
         private void Finish()
         {
             state = State.Finished;
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.StopTypingSFX();
             StopMinigameBGM();
 
             int typed = correctCount + wrongCount;
@@ -440,8 +448,12 @@ namespace Game.Typing
 
         private void PlayMinigameBGM()
         {
-            if (AudioManager.Instance != null && !string.IsNullOrEmpty(bgmId))
-                AudioManager.Instance.PlayBGM(bgmId);
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.StopAmbience();
+                if (!string.IsNullOrEmpty(bgmId))
+                    AudioManager.Instance.PlayBGM(bgmId);
+            }
         }
 
         private void StopMinigameBGM()
@@ -452,8 +464,13 @@ namespace Game.Typing
 
         private void ResumeMainBGM()
         {
-            if (AudioManager.Instance != null && !string.IsNullOrEmpty(mainBgmId))
-                AudioManager.Instance.PlayBGM(mainBgmId);
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.StopTypingSFX();
+                if (!string.IsNullOrEmpty(mainBgmId))
+                    AudioManager.Instance.PlayBGM(mainBgmId);
+                AudioManager.Instance.PlayAmbience();
+            }
         }
     }
 }

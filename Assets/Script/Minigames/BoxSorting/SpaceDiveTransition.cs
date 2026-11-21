@@ -35,8 +35,8 @@ namespace Game.Progression
         [SerializeField] private float shakeMagnitude = 0.12f;
 
         [Header("Audio (Opsional)")]
-        [SerializeField] private string bellSfxId = "Click";
-        [SerializeField] private string otherWorldBgmId = "";
+        [SerializeField] private string bellSfxId = "Bell";
+        [SerializeField] private string otherWorldBgmId = "Ambience";
 
         private bool isRunning;
         private bool isInOtherWorld;
@@ -119,8 +119,8 @@ namespace Game.Progression
             if (AudioManager.Instance != null)
             {
                 AudioManager.Instance.StopBGM();
-                if (!string.IsNullOrEmpty(bellSfxId))
-                    AudioManager.Instance.PlaySFX(bellSfxId);
+                string sfx = (string.IsNullOrEmpty(bellSfxId) || bellSfxId == "Click") ? "Bell" : bellSfxId;
+                AudioManager.Instance.PlaySFX(sfx);
             }
 
             Camera cam = Camera.main;
@@ -197,9 +197,11 @@ namespace Game.Progression
                 globalLight.intensity = otherWorldLightIntensity;
             }
 
-            if (AudioManager.Instance != null && !string.IsNullOrEmpty(otherWorldBgmId))
+            if (AudioManager.Instance != null)
             {
-                AudioManager.Instance.PlayBGM(otherWorldBgmId);
+                AudioManager.Instance.PlayAmbience(
+                    string.IsNullOrEmpty(otherWorldBgmId) ? "Ambience" : otherWorldBgmId
+                );
             }
 
             if (player != null) player.SetFrozen(false);
@@ -217,8 +219,8 @@ namespace Game.Progression
             // Denting lonceng saat kembali
             if (AudioManager.Instance != null)
             {
-                if (!string.IsNullOrEmpty(bellSfxId))
-                    AudioManager.Instance.PlaySFX(bellSfxId);
+                string sfx = (string.IsNullOrEmpty(bellSfxId) || bellSfxId == "Click") ? "Bell" : bellSfxId;
+                AudioManager.Instance.PlaySFX(sfx);
             }
 
             Camera cam = Camera.main;
@@ -285,6 +287,12 @@ namespace Game.Progression
             {
                 globalLight.color = originalLightColor;
                 globalLight.intensity = originalLightIntensity;
+            }
+
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayBGM("MainBgm");
+                AudioManager.Instance.PlayAmbience();
             }
 
             if (player != null) player.SetFrozen(false);

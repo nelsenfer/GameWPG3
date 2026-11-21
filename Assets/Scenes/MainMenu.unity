@@ -1649,9 +1649,33 @@ MonoBehaviour:
   - id: TypingBgm
     clip: {fileID: 8300000, guid: bb0736a0558b0ef48bd7dfb607246d52, type: 3}
     defaultVolume: 1
-  sfxList: []
+  - id: Ambience
+    clip: {fileID: 8300000, guid: a1111111222233334444555566667701, type: 3}
+    defaultVolume: 0.65
+  sfxList:
+  - id: Bell
+    clip: {fileID: 8300000, guid: a1111111222233334444555566667702, type: 3}
+    defaultVolume: 1
+  - id: Footstep
+    clip: {fileID: 8300000, guid: a1111111222233334444555566667703, type: 3}
+    defaultVolume: 0.85
+  - id: Typing
+    clip: {fileID: 8300000, guid: a1111111222233334444555566667704, type: 3}
+    defaultVolume: 0.9
+  - id: Keyboard
+    clip: {fileID: 8300000, guid: a1111111222233334444555566667704, type: 3}
+    defaultVolume: 0.9
+  - id: Pickup
+    clip: {fileID: 8300000, guid: a1111111222233334444555566667705, type: 3}
+    defaultVolume: 1
+  - id: Click
+    clip: {fileID: 8300000, guid: a1111111222233334444555566667705, type: 3}
+    defaultVolume: 0.8
+  ambienceId: Ambience
+  footstepSfxId: Footstep
   typingSfxId: Typing
   typingSfxDelay: 0.08
+  typingHoldDuration: 0.28
 --- !u!1 &594423266
 GameObject:
   m_ObjectHideFlags: 0

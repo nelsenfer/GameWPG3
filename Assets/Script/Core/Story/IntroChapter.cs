@@ -184,7 +184,7 @@ namespace Game.Progression
             });
 
             // 4. Ambil kopi di dapur
-            beats.Add(new StoryBeat
+            var ambilKopi = new StoryBeat
             {
                 beatName = "Ambil kopi",
                 trigger = BeatTrigger.Interact,
@@ -193,7 +193,13 @@ namespace Game.Progression
                 dialogue = kopiInk,
                 hideTargetAfter = true,
                 hints = KopiDulu()
+            };
+            ambilKopi.onTriggered.AddListener(() =>
+            {
+                if (AudioManager.Instance != null)
+                    AudioManager.Instance.PlaySFX("Pickup");
             });
+            beats.Add(ambilKopi);
 
             // (opsional) lampu berkedip di jalan pulang
             if (zonaLampu != null)
@@ -240,6 +246,14 @@ namespace Game.Progression
                 dialogue = loncengInk,
                 hideTargetAfter = true
             };
+            ambilLonceng.onTriggered.AddListener(() =>
+            {
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlaySFX("Pickup");
+                    AudioManager.Instance.PlaySFX("Bell");
+                }
+            });
             ambilLonceng.onFinished.AddListener(() =>
             {
                 if (mejaPanel != null) mejaPanel.SetActive(false);
